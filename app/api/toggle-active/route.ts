@@ -8,6 +8,7 @@ import {
   registerWatch,
   stopWatch,
 } from "@/lib/gmail"
+import { isAllowedToHold } from "@/lib/scheduler"
 
 export async function POST(req: NextRequest) {
   const session = await auth()
@@ -22,8 +23,14 @@ export async function POST(req: NextRequest) {
       id: inboxId,
       user: { email: session.user.email },
     },
+    include: { user: true },
   })
   if (!inbox) return NextResponse.json({ error: "Inbox not found" }, { status: 404 })
+
+  // Block activation if trial has expired and no active subscription
+  if (!inbox.isActive && !isAllowedToHold(inbox.user)) {
+    return NextResponse.json({ error: "subscription_required" }, { status: 403 })
+  }
 
   const gmail = await getGmailClient(inbox)
 

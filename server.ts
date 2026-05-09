@@ -2,7 +2,7 @@ import { createServer } from "http"
 import { parse } from "url"
 import next from "next"
 import cron from "node-cron"
-import { checkAndDeliverAll } from "./lib/scheduler"
+import { checkAndDeliverAll, enforceTrialExpiry } from "./lib/scheduler"
 
 const dev = process.env.NODE_ENV !== "production"
 const app = next({ dev })
@@ -12,6 +12,11 @@ app.prepare().then(() => {
   // Check all active users for due deliveries every minute
   cron.schedule("* * * * *", () => {
     checkAndDeliverAll().catch(console.error)
+  })
+
+  // Release held emails and deactivate inboxes for expired trials — runs hourly
+  cron.schedule("0 * * * *", () => {
+    enforceTrialExpiry().catch(console.error)
   })
 
   // Renew gmail.watch() subscriptions daily at 3am

@@ -43,6 +43,10 @@ export function DashboardActions({ isActive: initialActive, inboxId }: Props) {
         body: JSON.stringify({ inboxId }),
       })
       const json = await res.json()
+      if (res.status === 403 && json.error === "subscription_required") {
+        router.push("/billing")
+        return
+      }
       if (!res.ok) throw new Error(json.error)
       setIsActive(json.isActive)
       toast.success(json.isActive ? "DiscoveryMail started" : "DiscoveryMail stopped — inbox restored")

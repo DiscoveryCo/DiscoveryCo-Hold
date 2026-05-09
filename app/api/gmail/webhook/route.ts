@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { getGmailClient, ensureHoldLabel, holdEmail, isVip } from "@/lib/gmail"
+import { isAllowedToHold } from "@/lib/scheduler"
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,9 +14,10 @@ export async function POST(req: NextRequest) {
 
     const inbox = await prisma.inbox.findUnique({
       where: { email: emailAddress },
-      include: { vipRules: true, settings: true },
+      include: { vipRules: true, settings: true, user: true },
     })
     if (!inbox || !inbox.isActive) return NextResponse.json({}, { status: 200 })
+    if (!isAllowedToHold(inbox.user)) return NextResponse.json({}, { status: 200 })
 
     const gmail = await getGmailClient(inbox)
     const holdLabelId = await ensureHoldLabel(gmail, inbox.id)

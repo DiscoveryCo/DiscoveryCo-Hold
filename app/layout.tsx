@@ -15,7 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={inter.className}>
       <body className="min-h-screen bg-background text-foreground">
         {children}
-        <Toaster richColors position="top-right" />
+        <Toaster richColors position="top-left" offset={{ top: 68, left: 16 }} />
       </body>
     </html>
   )
