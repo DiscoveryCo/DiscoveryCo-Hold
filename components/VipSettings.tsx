@@ -5,12 +5,13 @@ import { toast } from "sonner"
 import { X } from "lucide-react"
 
 interface Props {
+  inboxId: string
   domains: string[]
   emails: string[]
   keywords: string[]
 }
 
-export function VipSettings({ domains: initDomains, emails: initEmails, keywords: initKeywords }: Props) {
+export function VipSettings({ inboxId, domains: initDomains, emails: initEmails, keywords: initKeywords }: Props) {
   const [domains, setDomains] = useState<string[]>(initDomains)
   const [emails, setEmails] = useState<string[]>(initEmails)
   const [keywords, setKeywords] = useState<string[]>(initKeywords)
@@ -40,7 +41,7 @@ export function VipSettings({ domains: initDomains, emails: initEmails, keywords
       const res = await fetch("/api/vip", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ domains, emails, keywords }),
+        body: JSON.stringify({ inboxId, domains, emails, keywords }),
       })
       if (!res.ok) throw new Error()
       toast.success("VIP settings saved")

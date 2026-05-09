@@ -1,6 +1,6 @@
 import { google } from "googleapis"
 import { prisma } from "@/lib/db"
-import type { User, VipRule } from "@/lib/generated/prisma/client"
+import type { Inbox, VipRule } from "@/lib/generated/prisma/client"
 
 const HOLD_LABEL_NAME = "DiscoveryMail-Hold"
 
@@ -12,20 +12,20 @@ function buildOAuth2Client() {
   )
 }
 
-export async function getGmailClient(user: User) {
+export async function getGmailClient(inbox: Inbox) {
   const oauth2 = buildOAuth2Client()
   oauth2.setCredentials({
-    access_token: user.accessToken,
-    refresh_token: user.refreshToken,
-    expiry_date: user.tokenExpiry ? user.tokenExpiry.getTime() : undefined,
+    access_token: inbox.accessToken,
+    refresh_token: inbox.refreshToken,
+    expiry_date: inbox.tokenExpiry ? inbox.tokenExpiry.getTime() : undefined,
   })
 
   oauth2.on("tokens", async (tokens) => {
-    await prisma.user.update({
-      where: { id: user.id },
+    await prisma.inbox.update({
+      where: { id: inbox.id },
       data: {
-        accessToken: tokens.access_token ?? user.accessToken,
-        tokenExpiry: tokens.expiry_date ? new Date(tokens.expiry_date) : user.tokenExpiry,
+        accessToken: tokens.access_token ?? inbox.accessToken,
+        tokenExpiry: tokens.expiry_date ? new Date(tokens.expiry_date) : inbox.tokenExpiry,
       },
     })
   })
@@ -35,10 +35,10 @@ export async function getGmailClient(user: User) {
 
 export async function ensureHoldLabel(
   gmail: ReturnType<typeof google.gmail>,
-  userId: string
+  inboxId: string
 ): Promise<string> {
-  const existing = await prisma.user.findUnique({
-    where: { id: userId },
+  const existing = await prisma.inbox.findUnique({
+    where: { id: inboxId },
     select: { holdLabelId: true },
   })
   if (existing?.holdLabelId) return existing.holdLabelId
@@ -46,7 +46,7 @@ export async function ensureHoldLabel(
   const { data } = await gmail.users.labels.list({ userId: "me" })
   const found = data.labels?.find((l) => l.name === HOLD_LABEL_NAME)
   if (found?.id) {
-    await prisma.user.update({ where: { id: userId }, data: { holdLabelId: found.id } })
+    await prisma.inbox.update({ where: { id: inboxId }, data: { holdLabelId: found.id } })
     return found.id
   }
 
@@ -59,7 +59,7 @@ export async function ensureHoldLabel(
     },
   })
   const labelId = created.data.id!
-  await prisma.user.update({ where: { id: userId }, data: { holdLabelId: labelId } })
+  await prisma.inbox.update({ where: { id: inboxId }, data: { holdLabelId: labelId } })
   return labelId
 }
 
@@ -122,7 +122,7 @@ export function isVip(
 
 export async function registerWatch(
   gmail: ReturnType<typeof google.gmail>,
-  userId: string
+  inboxId: string
 ) {
   const topic = process.env.GOOGLE_PUBSUB_TOPIC
   if (!topic) throw new Error("GOOGLE_PUBSUB_TOPIC not set")
@@ -136,8 +136,8 @@ export async function registerWatch(
     },
   })
 
-  await prisma.user.update({
-    where: { id: userId },
+  await prisma.inbox.update({
+    where: { id: inboxId },
     data: {
       historyId: data.historyId ? String(data.historyId) : undefined,
       watchExpiry: data.expiration ? new Date(Number(data.expiration)) : undefined,

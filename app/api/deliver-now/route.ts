@@ -1,24 +1,31 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { getGmailClient, ensureHoldLabel, releaseEmails } from "@/lib/gmail"
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const user = await prisma.user.findUnique({ where: { email: session.user.email } })
-  if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 })
+  const { inboxId } = await req.json().catch(() => ({}))
 
-  const gmail = await getGmailClient(user)
-  const holdLabelId = await ensureHoldLabel(gmail, user.id)
+  const inbox = await prisma.inbox.findFirst({
+    where: {
+      id: inboxId,
+      user: { email: session.user.email },
+    },
+  })
+  if (!inbox) return NextResponse.json({ error: "Inbox not found" }, { status: 404 })
+
+  const gmail = await getGmailClient(inbox)
+  const holdLabelId = await ensureHoldLabel(gmail, inbox.id)
   const count = await releaseEmails(gmail, holdLabelId)
 
   if (count > 0) {
     await prisma.activityLog.create({
-      data: { userId: user.id, emailCount: count, slotTime: "On demand" },
+      data: { inboxId: inbox.id, emailCount: count, slotTime: "On demand" },
     })
   }
 

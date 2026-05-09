@@ -22,8 +22,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       console.log("[signIn] called, email:", user.email, "provider:", account?.provider)
       if (!user.email) { console.log("[signIn] no email, denying"); return false }
       try {
-        console.log("[signIn] upserting user...")
-        await prisma.user.upsert({
+        console.log("[signIn] upserting user and primary inbox...")
+        const trialEndsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+
+        const dbUser = await prisma.user.upsert({
+          where: { email: user.email },
+          update: {
+            name: user.name,
+            image: user.image,
+            googleId: account?.providerAccountId,
+          },
+          create: {
+            email: user.email,
+            name: user.name,
+            image: user.image,
+            googleId: account?.providerAccountId,
+            subscriptionStatus: "trialing",
+            trialEndsAt,
+          },
+        })
+
+        await prisma.inbox.upsert({
           where: { email: user.email },
           update: {
             name: user.name,
@@ -36,6 +55,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               : null,
           },
           create: {
+            userId: dbUser.id,
             email: user.email,
             name: user.name,
             image: user.image,
@@ -45,6 +65,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             tokenExpiry: account?.expires_at
               ? new Date(account.expires_at * 1000)
               : null,
+            isPrimary: true,
             settings: {
               create: {},
             },

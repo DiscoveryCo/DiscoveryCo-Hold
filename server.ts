@@ -18,15 +18,15 @@ app.prepare().then(() => {
   cron.schedule("0 3 * * *", async () => {
     const { prisma } = await import("./lib/db")
     const { getGmailClient, registerWatch } = await import("./lib/gmail")
-    const users = await prisma.user.findMany({
+    const inboxes = await prisma.inbox.findMany({
       where: {
         isActive: true,
         watchExpiry: { lte: new Date(Date.now() + 24 * 60 * 60 * 1000) },
       },
     })
-    for (const user of users) {
-      const gmail = await getGmailClient(user)
-      await registerWatch(gmail, user.id).catch(console.error)
+    for (const inbox of inboxes) {
+      const gmail = await getGmailClient(inbox)
+      await registerWatch(gmail, inbox.id).catch(console.error)
     }
   })
 

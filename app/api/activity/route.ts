@@ -10,20 +10,27 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const user = await prisma.user.findUnique({ where: { email: session.user.email } })
-  if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 })
+  const inboxId = req.nextUrl.searchParams.get("inboxId")
+
+  const inbox = await prisma.inbox.findFirst({
+    where: {
+      id: inboxId ?? undefined,
+      user: { email: session.user.email },
+    },
+  })
+  if (!inbox) return NextResponse.json({ error: "Inbox not found" }, { status: 404 })
 
   const page = parseInt(req.nextUrl.searchParams.get("page") ?? "1", 10)
   const skip = (page - 1) * PAGE_SIZE
 
   const [logs, total] = await Promise.all([
     prisma.activityLog.findMany({
-      where: { userId: user.id },
+      where: { inboxId: inbox.id },
       orderBy: { deliveredAt: "desc" },
       skip,
       take: PAGE_SIZE,
     }),
-    prisma.activityLog.count({ where: { userId: user.id } }),
+    prisma.activityLog.count({ where: { inboxId: inbox.id } }),
   ])
 
   return NextResponse.json({

@@ -11,16 +11,16 @@ export async function POST(req: NextRequest) {
     const decoded = JSON.parse(Buffer.from(encoded, "base64").toString("utf-8"))
     const { emailAddress, historyId } = decoded
 
-    const user = await prisma.user.findUnique({
+    const inbox = await prisma.inbox.findUnique({
       where: { email: emailAddress },
       include: { vipRules: true, settings: true },
     })
-    if (!user || !user.isActive) return NextResponse.json({}, { status: 200 })
+    if (!inbox || !inbox.isActive) return NextResponse.json({}, { status: 200 })
 
-    const gmail = await getGmailClient(user)
-    const holdLabelId = await ensureHoldLabel(gmail, user.id)
+    const gmail = await getGmailClient(inbox)
+    const holdLabelId = await ensureHoldLabel(gmail, inbox.id)
 
-    const startHistoryId = user.historyId ?? String(historyId)
+    const startHistoryId = inbox.historyId ?? String(historyId)
     const { data } = await gmail.users.history.list({
       userId: "me",
       startHistoryId,
@@ -46,15 +46,14 @@ export async function POST(req: NextRequest) {
       const subject = headers.find((h) => h.name === "Subject")?.value ?? ""
       const snippet = full.data.snippet ?? ""
 
-      if (!isVip(from, subject, snippet, user.vipRules)) {
+      if (!isVip(from, subject, snippet, inbox.vipRules)) {
         await holdEmail(gmail, msg.id, holdLabelId)
       }
     }
 
-    // Update stored historyId to the latest one
     if (data.historyId) {
-      await prisma.user.update({
-        where: { id: user.id },
+      await prisma.inbox.update({
+        where: { id: inbox.id },
         data: { historyId: String(data.historyId) },
       })
     }
@@ -62,7 +61,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({}, { status: 200 })
   } catch (err) {
     console.error("webhook error", err)
-    // Always 200 so Pub/Sub doesn't retry infinitely on bad data
     return NextResponse.json({}, { status: 200 })
   }
 }

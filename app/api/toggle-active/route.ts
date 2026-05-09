@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import {
@@ -9,34 +9,39 @@ import {
   stopWatch,
 } from "@/lib/gmail"
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const user = await prisma.user.findUnique({ where: { email: session.user.email } })
-  if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 })
+  const { inboxId } = await req.json().catch(() => ({}))
 
-  const gmail = await getGmailClient(user)
+  const inbox = await prisma.inbox.findFirst({
+    where: {
+      id: inboxId,
+      user: { email: session.user.email },
+    },
+  })
+  if (!inbox) return NextResponse.json({ error: "Inbox not found" }, { status: 404 })
 
-  if (user.isActive) {
-    // Stopping: release all held emails, stop watch
-    const holdLabelId = await ensureHoldLabel(gmail, user.id)
+  const gmail = await getGmailClient(inbox)
+
+  if (inbox.isActive) {
+    const holdLabelId = await ensureHoldLabel(gmail, inbox.id)
     const count = await releaseEmails(gmail, holdLabelId)
     if (count > 0) {
       await prisma.activityLog.create({
-        data: { userId: user.id, emailCount: count, slotTime: "Stopped" },
+        data: { inboxId: inbox.id, emailCount: count, slotTime: "Stopped" },
       })
     }
     await stopWatch(gmail)
-    await prisma.user.update({ where: { id: user.id }, data: { isActive: false } })
+    await prisma.inbox.update({ where: { id: inbox.id }, data: { isActive: false } })
     return NextResponse.json({ isActive: false })
   } else {
-    // Starting: set up hold label and register Gmail watch
-    await ensureHoldLabel(gmail, user.id)
-    await registerWatch(gmail, user.id)
-    await prisma.user.update({ where: { id: user.id }, data: { isActive: true } })
+    await ensureHoldLabel(gmail, inbox.id)
+    await registerWatch(gmail, inbox.id)
+    await prisma.inbox.update({ where: { id: inbox.id }, data: { isActive: true } })
     return NextResponse.json({ isActive: true })
   }
 }

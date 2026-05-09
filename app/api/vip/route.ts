@@ -2,19 +2,24 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await auth()
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
+  const inboxId = req.nextUrl.searchParams.get("inboxId")
+
+  const inbox = await prisma.inbox.findFirst({
+    where: {
+      id: inboxId ?? undefined,
+      user: { email: session.user.email },
+    },
     include: { vipRules: true },
   })
-  if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 })
+  if (!inbox) return NextResponse.json({ error: "Inbox not found" }, { status: 404 })
 
-  return NextResponse.json(user.vipRules)
+  return NextResponse.json(inbox.vipRules)
 }
 
 export async function PUT(req: NextRequest) {
@@ -23,25 +28,29 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const user = await prisma.user.findUnique({ where: { email: session.user.email } })
-  if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 })
-
   const body = await req.json()
-  // body: { domains: string[], emails: string[], keywords: string[] }
-  const { domains = [], emails = [], keywords = [] } = body
+  const { inboxId, domains = [], emails = [], keywords = [] } = body
 
-  await prisma.vipRule.deleteMany({ where: { userId: user.id } })
+  const inbox = await prisma.inbox.findFirst({
+    where: {
+      id: inboxId,
+      user: { email: session.user.email },
+    },
+  })
+  if (!inbox) return NextResponse.json({ error: "Inbox not found" }, { status: 404 })
+
+  await prisma.vipRule.deleteMany({ where: { inboxId: inbox.id } })
 
   const rules = [
-    ...domains.map((v: string) => ({ userId: user.id, type: "DOMAIN", value: v })),
-    ...emails.map((v: string) => ({ userId: user.id, type: "EMAIL", value: v })),
-    ...keywords.map((v: string) => ({ userId: user.id, type: "KEYWORD", value: v })),
+    ...domains.map((v: string) => ({ inboxId: inbox.id, type: "DOMAIN", value: v })),
+    ...emails.map((v: string) => ({ inboxId: inbox.id, type: "EMAIL", value: v })),
+    ...keywords.map((v: string) => ({ inboxId: inbox.id, type: "KEYWORD", value: v })),
   ]
 
   if (rules.length > 0) {
     await prisma.vipRule.createMany({ data: rules })
   }
 
-  const updated = await prisma.vipRule.findMany({ where: { userId: user.id } })
+  const updated = await prisma.vipRule.findMany({ where: { inboxId: inbox.id } })
   return NextResponse.json(updated)
 }

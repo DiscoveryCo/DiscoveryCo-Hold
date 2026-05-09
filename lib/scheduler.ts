@@ -12,16 +12,38 @@ function isInDndWindow(dndFrom: string, dndTo: string, nowMinutes: number): bool
   return nowMinutes >= from || nowMinutes < to
 }
 
+function getLocalTime(date: Date, tz: string): { time: string; day: number } {
+  // Use en-CA locale which formats as "YYYY-MM-DD, HH:MM" — reliable for parsing
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: tz,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  })
+  const formatted = formatter.format(date) // e.g. "2024-06-15, 14:30"
+  const [datePart, timePart] = formatted.split(", ")
+  const [year, month, dayOfMonth] = datePart.split("-").map(Number)
+  const localDate = new Date(year, month - 1, dayOfMonth)
+  return {
+    time: timePart.substring(0, 5), // "14:30"
+    day: localDate.getDay(),        // 0 = Sunday … 6 = Saturday
+  }
+}
+
 function getDeliveryTimesForNow(
   scheduleType: string,
   intervalHours: number | null,
   timesPerDay: number | null,
   schedules: { dayOfWeek: number; time: string }[],
-  now: Date
+  now: Date,
+  timezone: string
 ): string[] {
-  const pad = (n: number) => String(n).padStart(2, "0")
-  const currentTime = `${pad(now.getHours())}:${pad(now.getMinutes())}`
-  const day = now.getDay()
+  const { time: currentTime, day } = getLocalTime(now, timezone)
+  const [hourStr] = currentTime.split(":")
+  const h = parseInt(hourStr)
 
   if (scheduleType === "custom_weekly") {
     return schedules
@@ -36,35 +58,38 @@ function getDeliveryTimesForNow(
   }
 
   if (scheduleType === "interval" && intervalHours) {
-    const h = now.getHours()
-    if (now.getMinutes() === 0 && h % intervalHours === 0) return [currentTime]
+    const [, minStr] = currentTime.split(":")
+    if (parseInt(minStr) === 0 && h % intervalHours === 0) return [currentTime]
     return []
   }
 
   if (scheduleType === "times" && timesPerDay && timesPerDay >= 2) {
     const interval = Math.floor(24 / timesPerDay)
-    const h = now.getHours()
-    if (now.getMinutes() === 0 && h % interval === 0) return [currentTime]
+    const [, minStr] = currentTime.split(":")
+    if (parseInt(minStr) === 0 && h % interval === 0) return [currentTime]
     return []
   }
 
   return []
 }
 
-export async function checkAndDeliverForUser(userId: string) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
+export async function checkAndDeliverForInbox(inboxId: string) {
+  const inbox = await prisma.inbox.findUnique({
+    where: { id: inboxId },
     include: {
       settings: true,
       schedules: true,
       vipRules: true,
     },
   })
-  if (!user || !user.isActive || !user.holdLabelId) return
+  if (!inbox || !inbox.isActive || !inbox.holdLabelId) return
 
-  const settings = user.settings
+  const settings = inbox.settings
+  const timezone = settings?.timezone ?? "UTC"
   const now = new Date()
-  const nowMinutes = now.getHours() * 60 + now.getMinutes()
+  const { time: localTime } = getLocalTime(now, timezone)
+  const [lh, lm] = localTime.split(":").map(Number)
+  const nowMinutes = lh * 60 + lm
 
   if (settings?.dndEnabled && settings.dndFrom && settings.dndTo) {
     if (isInDndWindow(settings.dndFrom, settings.dndTo, nowMinutes)) return
@@ -74,28 +99,29 @@ export async function checkAndDeliverForUser(userId: string) {
     settings?.scheduleType ?? "custom_weekly",
     settings?.intervalHours ?? null,
     settings?.timesPerDay ?? null,
-    user.schedules,
-    now
+    inbox.schedules,
+    now,
+    timezone
   )
 
   if (deliverySlots.length === 0) return
 
-  const gmail = await getGmailClient(user)
-  const holdLabelId = await ensureHoldLabel(gmail, userId)
+  const gmail = await getGmailClient(inbox)
+  const holdLabelId = await ensureHoldLabel(gmail, inboxId)
   const count = await releaseEmails(gmail, holdLabelId)
 
   if (count > 0) {
     const slotLabel = deliverySlots[0]
     await prisma.activityLog.create({
-      data: { userId, emailCount: count, slotTime: slotLabel },
+      data: { inboxId, emailCount: count, slotTime: slotLabel },
     })
   }
 }
 
 export async function checkAndDeliverAll() {
-  const activeUsers = await prisma.user.findMany({
+  const activeInboxes = await prisma.inbox.findMany({
     where: { isActive: true },
     select: { id: true },
   })
-  await Promise.allSettled(activeUsers.map((u) => checkAndDeliverForUser(u.id)))
+  await Promise.allSettled(activeInboxes.map((i) => checkAndDeliverForInbox(i.id)))
 }

@@ -5,7 +5,8 @@
       "name": "DiscoveryMail",
       "runtimeExecutable": "/opt/homebrew/opt/node@22/bin/npm",
       "runtimeArgs": ["run", "dev"],
-      "port": 3000
+      "port": 3000,
+      "autoPort": false
     }
   ]
 }

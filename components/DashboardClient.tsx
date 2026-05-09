@@ -7,10 +7,10 @@ import { Truck, StopCircle, Play } from "lucide-react"
 
 interface Props {
   isActive: boolean
-  userEmail: string
+  inboxId: string
 }
 
-export function DashboardActions({ isActive: initialActive, userEmail }: Props) {
+export function DashboardActions({ isActive: initialActive, inboxId }: Props) {
   const [isActive, setIsActive] = useState(initialActive)
   const [loading, setLoading] = useState<"toggle" | "deliver" | null>(null)
   const router = useRouter()
@@ -18,12 +18,16 @@ export function DashboardActions({ isActive: initialActive, userEmail }: Props) 
   async function handleDeliver() {
     setLoading("deliver")
     try {
-      const res = await fetch("/api/deliver-now", { method: "POST" })
+      const res = await fetch("/api/deliver-now", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inboxId }),
+      })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error)
       toast.success(`Delivered ${json.count} email${json.count === 1 ? "" : "s"}`)
       router.refresh()
-    } catch (e) {
+    } catch {
       toast.error("Delivery failed")
     } finally {
       setLoading(null)
@@ -33,13 +37,17 @@ export function DashboardActions({ isActive: initialActive, userEmail }: Props) 
   async function handleToggle() {
     setLoading("toggle")
     try {
-      const res = await fetch("/api/toggle-active", { method: "POST" })
+      const res = await fetch("/api/toggle-active", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inboxId }),
+      })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error)
       setIsActive(json.isActive)
       toast.success(json.isActive ? "DiscoveryMail started" : "DiscoveryMail stopped — inbox restored")
       router.refresh()
-    } catch (e) {
+    } catch {
       toast.error("Failed to toggle")
     } finally {
       setLoading(null)
@@ -51,7 +59,7 @@ export function DashboardActions({ isActive: initialActive, userEmail }: Props) 
       <button
         onClick={handleDeliver}
         disabled={loading !== null}
-        className="flex items-center gap-2 border border-white/30 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-white/10 transition-colors disabled:opacity-50"
+        className="flex items-center gap-2 border border-gray-200 text-gray-700 text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
       >
         <Truck className="w-4 h-4" />
         Deliver Now

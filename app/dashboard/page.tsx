@@ -3,10 +3,11 @@ import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import Image from "next/image"
-import { Mail, Settings } from "lucide-react"
+import { Mail } from "lucide-react"
 import { DashboardActions } from "@/components/DashboardClient"
 import { UserMenu } from "@/components/UserMenu"
-import { getGmailClient, ensureHoldLabel, getHeldCount } from "@/lib/gmail"
+import { InboxSwitcher } from "@/components/InboxSwitcher"
+import { getGmailClient, getHeldCount } from "@/lib/gmail"
 import { ActivityPagination } from "@/components/ActivityPagination"
 import { HeldEmailsCard } from "@/components/HeldEmailsCard"
 import { formatDistanceToNow, format } from "date-fns"
@@ -33,12 +34,33 @@ function formatDate(date: Date) {
   return format(date, "MMM d, yyyy")
 }
 
-async function DashboardContent({ page }: { page: number }) {
+async function DashboardContent({ page, inboxId }: { page: number; inboxId?: string }) {
   const session = await auth()
   if (!session?.user?.email) redirect("/login")
 
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
+    include: {
+      inboxes: {
+        orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+        select: { id: true, email: true },
+      },
+    },
+  })
+  if (!user) redirect("/login")
+  if (user.inboxes.length === 0) redirect("/login")
+
+  const inbox = inboxId
+    ? await prisma.inbox.findFirst({ where: { id: inboxId, userId: user.id } })
+    : null
+  const activeInbox = inbox ?? (await prisma.inbox.findFirst({
+    where: { userId: user.id, isPrimary: true },
+  })) ?? (await prisma.inbox.findFirst({ where: { userId: user.id } }))
+
+  if (!activeInbox) redirect("/login")
+
+  const fullInbox = await prisma.inbox.findUnique({
+    where: { id: activeInbox.id },
     include: {
       settings: true,
       vipRules: true,
@@ -49,128 +71,186 @@ async function DashboardContent({ page }: { page: number }) {
       },
     },
   })
-  if (!user) redirect("/login")
+  if (!fullInbox) redirect("/login")
 
-  const totalLogs = await prisma.activityLog.count({ where: { userId: user.id } })
+  const totalLogs = await prisma.activityLog.count({ where: { inboxId: fullInbox.id } })
   const totalPages = Math.ceil(totalLogs / PAGE_SIZE)
 
-  const domainCount = user.vipRules.filter((r) => r.type === "DOMAIN").length
-  const emailCount = user.vipRules.filter((r) => r.type === "EMAIL").length
-  const keywordCount = user.vipRules.filter((r) => r.type === "KEYWORD").length
+  const domainCount = fullInbox.vipRules.filter((r) => r.type === "DOMAIN").length
+  const emailCount = fullInbox.vipRules.filter((r) => r.type === "EMAIL").length
+  const keywordCount = fullInbox.vipRules.filter((r) => r.type === "KEYWORD").length
 
   const joinDate = format(user.createdAt, "MMM d, yyyy")
 
+  const trialDaysLeft = user.trialEndsAt && user.subscriptionStatus === "trialing"
+    ? Math.max(0, Math.ceil((new Date(user.trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : null
+
   let heldCount = 0
-  if (user.isActive && user.holdLabelId) {
+  if (fullInbox.isActive && fullInbox.holdLabelId) {
     try {
-      const gmail = await getGmailClient(user)
-      heldCount = await getHeldCount(gmail, user.holdLabelId)
+      const gmail = await getGmailClient(fullInbox)
+      heldCount = await getHeldCount(gmail, fullInbox.holdLabelId)
     } catch {
-      // non-fatal — just show 0
+      // non-fatal
     }
   }
 
+  const settingsHref = `/settings?inbox=${fullInbox.id}`
+
   return (
-    <div className="min-h-screen bg-[#1a1d2e] text-white">
-      {/* Top bar */}
-      <header className="border-b border-white/10 px-6 py-3 flex items-center justify-between">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 px-6 py-3 grid grid-cols-3 items-center">
         <div className="flex items-center gap-2">
           <Mail className="w-5 h-5 text-[#7c7cf8]" />
-          <span className="font-bold text-lg tracking-tight">DiscoveryMail</span>
+          <span className="font-bold text-lg tracking-tight text-gray-900">DiscoveryMail</span>
         </div>
-        <UserMenu email={user.email} image={user.image ?? null} />
+        <div className="flex justify-center">
+          <InboxSwitcher inboxes={user.inboxes} currentInboxId={fullInbox.id} />
+        </div>
+        <div className="flex justify-end">
+          <UserMenu email={user.email} image={user.image ?? null} settingsHref={settingsHref} />
+        </div>
       </header>
 
-      {/* Profile + actions */}
-      <div className="px-6 py-6 flex items-center justify-between border-b border-white/10">
-        <div className="flex items-center gap-4">
-          {user.image && <Image src={user.image} alt="" width={56} height={56} className="rounded-full" />}
-          <div>
-            <p className="font-semibold text-lg">{user.name}</p>
-            <p className="text-slate-400 text-sm">{user.email}</p>
-            <p className="text-slate-500 text-xs mt-0.5">Member since {joinDate}</p>
+      {/* Trial banner — full width, between header and main */}
+      {trialDaysLeft !== null && (
+        <div className="w-full bg-[#ededff] border-b border-[#d4d4fc] px-6 py-2.5 text-center text-sm text-[#5b5bd6]">
+          🚀 {trialDaysLeft} {trialDaysLeft === 1 ? "day" : "days"} left in your free trial.{" "}
+          <Link href="/billing" className="font-semibold underline underline-offset-2 hover:text-[#4a4ac4] transition-colors">
+            Upgrade now
+          </Link>
+        </div>
+      )}
+
+      <main className="max-w-5xl mx-auto px-6 py-8 flex-1 w-full">
+        {/* Subscription banners */}
+        {user.subscriptionStatus === "canceled" && (
+          <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center justify-between gap-4">
+            <p className="text-sm text-amber-700">
+              Your DiscoveryMail subscription has ended. Your emails are no longer being held.
+            </p>
+            <Link
+              href="/billing"
+              className="flex-shrink-0 bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+            >
+              Subscribe
+            </Link>
           </div>
-        </div>
-        <DashboardActions isActive={user.isActive} userEmail={user.email} />
-      </div>
+        )}
+        {user.subscriptionStatus === "past_due" && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center justify-between gap-4">
+            <p className="text-sm text-red-700">
+              Your last payment failed. Update your payment details to keep emails held.
+            </p>
+            <Link
+              href="/billing"
+              className="flex-shrink-0 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+            >
+              Fix Payment
+            </Link>
+          </div>
+        )}
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-6 py-6">
-        <div className="bg-[#242740] rounded-xl p-5">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-2">
-            VIP List
-          </p>
-          <p className="text-sm text-slate-300 leading-relaxed">
-            You have <strong className="text-white">{domainCount} domain{domainCount !== 1 ? "s" : ""}</strong>,{" "}
-            <strong className="text-white">{emailCount} email address{emailCount !== 1 ? "es" : ""}</strong> and{" "}
-            <strong className="text-white">{keywordCount} keyword{keywordCount !== 1 ? "s" : ""}</strong> in your VIP List.
-          </p>
-          <Link href="/settings?tab=vip" className="text-[#7c7cf8] text-sm mt-2 inline-block hover:underline">
-            Manage VIPs
-          </Link>
-        </div>
-
-        <div className="bg-[#242740] rounded-xl p-5">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-2">
-            Delivery
-          </p>
-          <p className="text-sm text-slate-300 leading-relaxed">
-            Your emails are delivered at{" "}
-            <strong className="text-white">{scheduleLabel(user.settings)}</strong>.{" "}
-            {user.settings?.dndEnabled && user.settings.dndFrom && user.settings.dndTo
-              ? `DND active from ${user.settings.dndFrom} to ${user.settings.dndTo}.`
-              : "You do not have any DND period set."}
-          </p>
-          <Link href="/settings?tab=delivery" className="text-[#7c7cf8] text-sm mt-2 inline-block hover:underline">
-            Manage delivery
-          </Link>
+        {/* Profile + actions */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            {fullInbox.image && (
+              <Image src={fullInbox.image} alt="" width={52} height={52} className="rounded-xl" />
+            )}
+            <div>
+              <p className="font-semibold text-gray-900 text-lg">{fullInbox.name}</p>
+              <p className="text-gray-500 text-sm">{fullInbox.email}</p>
+              <p className="text-gray-400 text-xs mt-0.5">Member since {joinDate}</p>
+            </div>
+          </div>
+          <DashboardActions isActive={fullInbox.isActive} inboxId={fullInbox.id} />
         </div>
 
-        <HeldEmailsCard heldCount={heldCount} isActive={user.isActive} />
+        {/* Stat cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div className="bg-white border border-gray-200 rounded-xl p-5">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">
+              VIP List
+            </p>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              You have <strong className="text-gray-900">{domainCount} domain{domainCount !== 1 ? "s" : ""}</strong>,{" "}
+              <strong className="text-gray-900">{emailCount} email address{emailCount !== 1 ? "es" : ""}</strong> and{" "}
+              <strong className="text-gray-900">{keywordCount} keyword{keywordCount !== 1 ? "s" : ""}</strong> in your VIP List.
+            </p>
+            <Link href={`${settingsHref}&tab=vip`} className="text-[#7c7cf8] text-sm mt-2 inline-block hover:underline">
+              Manage VIPs
+            </Link>
+          </div>
 
-      </div>
+          <div className="bg-white border border-gray-200 rounded-xl p-5">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">
+              Delivery
+            </p>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              Your emails are delivered at{" "}
+              <strong className="text-gray-900">{scheduleLabel(fullInbox.settings)}</strong>.{" "}
+              {fullInbox.settings?.dndEnabled && fullInbox.settings.dndFrom && fullInbox.settings.dndTo
+                ? `DND active from ${fullInbox.settings.dndFrom} to ${fullInbox.settings.dndTo}.`
+                : "You do not have any DND period set."}
+            </p>
+            <Link href={`${settingsHref}&tab=delivery`} className="text-[#7c7cf8] text-sm mt-2 inline-block hover:underline">
+              Manage delivery
+            </Link>
+          </div>
 
-      {/* Activity Log */}
-      <div className="px-6 pb-10">
-        <div className="flex items-center gap-2 mb-4">
-          <h2 className="text-lg font-semibold">Activity Log</h2>
-          <Link href="/settings" className="ml-auto text-slate-400 hover:text-white">
-            <Settings className="w-4 h-4" />
-          </Link>
+          <HeldEmailsCard heldCount={heldCount} isActive={fullInbox.isActive} />
         </div>
 
-        <div className="bg-[#242740] rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-white/10 text-slate-400 text-xs uppercase tracking-widest">
-                <th className="text-left px-5 py-3 font-medium w-48">Date</th>
-                <th className="text-right px-5 py-3 font-medium">Emails Processed</th>
-              </tr>
-            </thead>
-            <tbody>
-              {user.activityLogs.length === 0 ? (
-                <tr>
-                  <td colSpan={2} className="px-5 py-10 text-center text-slate-500">
-                    No deliveries yet. Start DiscoveryMail to begin batching your inbox.
-                  </td>
+        {/* Activity Log */}
+        <div>
+          <div className="flex items-center mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Activity Log</h2>
+          </div>
+
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 text-gray-400 text-xs uppercase tracking-widest">
+                  <th className="text-left px-5 py-3 font-medium w-48">Date</th>
+                  <th className="text-right px-5 py-3 font-medium">Emails Processed</th>
                 </tr>
-              ) : (
-                user.activityLogs.map((log) => (
-                  <tr key={log.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                    <td className="px-5 py-3">
-                      <p className="text-slate-300">{formatDate(log.deliveredAt)}</p>
-                      {log.slotTime && <p className="text-slate-500 text-xs mt-0.5">{log.slotTime}</p>}
+              </thead>
+              <tbody>
+                {fullInbox.activityLogs.length === 0 ? (
+                  <tr>
+                    <td colSpan={2} className="px-5 py-10 text-center text-gray-400">
+                      No deliveries yet. Start DiscoveryMail to begin batching your inbox.
                     </td>
-                    <td className="px-5 py-3 text-right text-white font-medium">{log.emailCount}</td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : (
+                  fullInbox.activityLogs.map((log) => (
+                    <tr key={log.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                      <td className="px-5 py-3">
+                        <p className="text-gray-700">{formatDate(log.deliveredAt)}</p>
+                        {log.slotTime && <p className="text-gray-400 text-xs mt-0.5">{log.slotTime}</p>}
+                      </td>
+                      <td className="px-5 py-3 text-right text-gray-900 font-medium">{log.emailCount}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
 
-        <ActivityPagination page={page} pages={totalPages} />
-      </div>
+          <ActivityPagination page={page} pages={totalPages} />
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="border-t border-gray-200 py-6 px-6 flex items-center justify-between mt-4">
+        <div className="flex items-center gap-2">
+          <Mail className="w-4 h-4 text-[#7c7cf8]" />
+          <span className="text-sm font-semibold text-gray-700">DiscoveryMail</span>
+        </div>
+        <span className="text-xs text-gray-400">© {new Date().getFullYear()}</span>
+      </footer>
     </div>
   )
 }
@@ -178,14 +258,15 @@ async function DashboardContent({ page }: { page: number }) {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>
+  searchParams: Promise<{ page?: string; inbox?: string }>
 }) {
   const params = await searchParams
   const page = Math.max(1, parseInt(params.page ?? "1", 10))
+  const inboxId = params.inbox
 
   return (
     <Suspense>
-      <DashboardContent page={page} />
+      <DashboardContent page={page} inboxId={inboxId} />
     </Suspense>
   )
 }

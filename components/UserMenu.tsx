@@ -2,14 +2,15 @@
 
 import { useState, useRef, useEffect } from "react"
 import Image from "next/image"
-import { ChevronDown, LogOut } from "lucide-react"
+import { ChevronDown, CreditCard, LayoutDashboard, LogOut, Settings, User } from "lucide-react"
 
 interface Props {
   email: string
   image: string | null
+  settingsHref: string
 }
 
-export function UserMenu({ email, image }: Props) {
+export function UserMenu({ email, image, settingsHref }: Props) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -24,18 +25,50 @@ export function UserMenu({ email, image }: Props) {
   }, [])
 
   return (
-    <div ref={ref} className="relative flex items-center gap-2 text-sm text-slate-300">
-      {image && <Image src={image} alt="" width={28} height={28} className="rounded-full" />}
-      <span>{email}</span>
+    <div ref={ref} className="relative flex items-center gap-1">
       <button
         onClick={() => setOpen(!open)}
-        className="text-slate-500 hover:text-slate-300 ml-1"
+        className="flex items-center gap-1 hover:opacity-80 transition-opacity"
       >
-        <ChevronDown className="w-4 h-4" />
+        {image && <Image src={image} alt="" width={32} height={32} className="rounded-lg" />}
+        <ChevronDown className="w-4 h-4 text-gray-400" />
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-44 bg-[#2a2d40] border border-white/10 rounded-xl shadow-lg overflow-hidden z-50">
+        <div className="absolute right-0 top-full mt-2 w-44 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-50">
+          <a
+            href="/dashboard"
+            className="flex items-center gap-2 px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+            onClick={() => setOpen(false)}
+          >
+            <LayoutDashboard className="w-4 h-4" />
+            Dashboard
+          </a>
+          <a
+            href="/account"
+            className="flex items-center gap-2 px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+            onClick={() => setOpen(false)}
+          >
+            <User className="w-4 h-4" />
+            Account
+          </a>
+          <a
+            href={settingsHref}
+            className="flex items-center gap-2 px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+            onClick={() => setOpen(false)}
+          >
+            <Settings className="w-4 h-4" />
+            Settings
+          </a>
+          <a
+            href="/billing"
+            className="flex items-center gap-2 px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+            onClick={() => setOpen(false)}
+          >
+            <CreditCard className="w-4 h-4" />
+            Billing
+          </a>
+          <div className="border-t border-gray-100" />
           <form
             action={async () => {
               const { signOut } = await import("next-auth/react")
@@ -44,7 +77,7 @@ export function UserMenu({ email, image }: Props) {
           >
             <button
               type="submit"
-              className="w-full flex items-center gap-2 px-4 py-3 text-sm text-slate-300 hover:bg-white/5 transition-colors"
+              className="w-full flex items-center gap-2 px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
             >
               <LogOut className="w-4 h-4" />
               Log out

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { Plus, X } from "lucide-react"
 
@@ -11,7 +11,51 @@ interface DaySchedule {
   times: string[]
 }
 
+// Common IANA timezones grouped by region
+const TIMEZONES = [
+  { label: "UTC", value: "UTC" },
+  { label: "───── Europe ─────", value: "", disabled: true },
+  { label: "London (GMT/BST)", value: "Europe/London" },
+  { label: "Dublin (GMT/IST)", value: "Europe/Dublin" },
+  { label: "Lisbon (WET/WEST)", value: "Europe/Lisbon" },
+  { label: "Paris / Berlin / Rome (CET/CEST)", value: "Europe/Paris" },
+  { label: "Helsinki / Kyiv (EET/EEST)", value: "Europe/Helsinki" },
+  { label: "Moscow (MSK)", value: "Europe/Moscow" },
+  { label: "───── Americas ─────", value: "", disabled: true },
+  { label: "New York (ET)", value: "America/New_York" },
+  { label: "Chicago (CT)", value: "America/Chicago" },
+  { label: "Denver (MT)", value: "America/Denver" },
+  { label: "Los Angeles (PT)", value: "America/Los_Angeles" },
+  { label: "Anchorage (AKT)", value: "America/Anchorage" },
+  { label: "Honolulu (HST)", value: "Pacific/Honolulu" },
+  { label: "Toronto (ET)", value: "America/Toronto" },
+  { label: "Vancouver (PT)", value: "America/Vancouver" },
+  { label: "São Paulo (BRT)", value: "America/Sao_Paulo" },
+  { label: "Buenos Aires (ART)", value: "America/Argentina/Buenos_Aires" },
+  { label: "Mexico City (CST/CDT)", value: "America/Mexico_City" },
+  { label: "───── Asia & Pacific ─────", value: "", disabled: true },
+  { label: "Dubai (GST)", value: "Asia/Dubai" },
+  { label: "Karachi (PKT)", value: "Asia/Karachi" },
+  { label: "Kolkata (IST)", value: "Asia/Kolkata" },
+  { label: "Dhaka (BST)", value: "Asia/Dhaka" },
+  { label: "Bangkok (ICT)", value: "Asia/Bangkok" },
+  { label: "Singapore / Kuala Lumpur (SGT)", value: "Asia/Singapore" },
+  { label: "Hong Kong (HKT)", value: "Asia/Hong_Kong" },
+  { label: "Shanghai / Beijing (CST)", value: "Asia/Shanghai" },
+  { label: "Tokyo (JST)", value: "Asia/Tokyo" },
+  { label: "Seoul (KST)", value: "Asia/Seoul" },
+  { label: "Sydney (AEST/AEDT)", value: "Australia/Sydney" },
+  { label: "Melbourne (AEST/AEDT)", value: "Australia/Melbourne" },
+  { label: "Auckland (NZST/NZDT)", value: "Pacific/Auckland" },
+  { label: "───── Africa ─────", value: "", disabled: true },
+  { label: "Cairo (EET)", value: "Africa/Cairo" },
+  { label: "Johannesburg (SAST)", value: "Africa/Johannesburg" },
+  { label: "Lagos (WAT)", value: "Africa/Lagos" },
+  { label: "Nairobi (EAT)", value: "Africa/Nairobi" },
+]
+
 interface Props {
+  inboxId: string
   scheduleType: ScheduleType
   intervalHours: number | null
   timesPerDay: number | null
@@ -78,6 +122,7 @@ function AddTimeButton({ onAdd }: { onAdd: (time: string) => void }) {
 }
 
 export function DeliverySettings({
+  inboxId,
   scheduleType: initType,
   intervalHours: initInterval,
   timesPerDay: initTimes,
@@ -86,7 +131,7 @@ export function DeliverySettings({
   dndEnabled: initDnd,
   dndFrom: initDndFrom,
   dndTo: initDndTo,
-  timezone,
+  timezone: timezone_init,
 }: Props) {
   const [scheduleType, setScheduleType] = useState<ScheduleType>(initType)
   const [intervalHours, setIntervalHours] = useState(initInterval ?? 4)
@@ -96,7 +141,18 @@ export function DeliverySettings({
   const [dndEnabled, setDndEnabled] = useState(initDnd)
   const [dndFrom, setDndFrom] = useState(initDndFrom)
   const [dndTo, setDndTo] = useState(initDndTo)
+  const [timezone, setTimezone] = useState(timezone_init)
   const [saving, setSaving] = useState(false)
+
+  // Auto-detect browser timezone on first visit (when still at the UTC default)
+  useEffect(() => {
+    if (timezone_init === "UTC") {
+      try {
+        const detected = Intl.DateTimeFormat().resolvedOptions().timeZone
+        if (detected) setTimezone(detected)
+      } catch {}
+    }
+  }, [])
 
   function addDailyTime(time: string) {
     if (!customDailyTimes.includes(time)) setCustomDailyTimes([...customDailyTimes, time].sort())
@@ -142,18 +198,20 @@ export function DeliverySettings({
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+            inboxId,
             scheduleType,
             intervalHours: scheduleType === "interval" ? intervalHours : null,
             timesPerDay: scheduleType === "times" ? timesPerDay : null,
             dndEnabled,
             dndFrom: dndEnabled ? dndFrom : null,
             dndTo: dndEnabled ? dndTo : null,
+            timezone,
           }),
         }),
         fetch("/api/schedule", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(buildScheduleSlots()),
+          body: JSON.stringify({ inboxId, slots: buildScheduleSlots() }),
         }),
       ])
       if (!settingsRes.ok || !scheduleRes.ok) throw new Error()
@@ -167,10 +225,29 @@ export function DeliverySettings({
 
   return (
     <div className="space-y-6 max-w-2xl">
-      {/* Timezone banner */}
-      <div className="bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 text-sm text-blue-800">
-        All times are in the <strong>{timezone}</strong> timezone. If your timezone
-        ever changes, stop and start DiscoveryMail again to reset to the new timezone.
+      {/* Timezone picker */}
+      <div className="border border-gray-200 rounded-xl p-5 bg-white">
+        <label className="block">
+          <p className="font-medium text-gray-900 text-sm mb-1">Timezone</p>
+          <p className="text-xs text-gray-500 mb-3">All delivery times are interpreted in this timezone, including DST changes.</p>
+          <select
+            value={timezone}
+            onChange={(e) => setTimezone(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-900"
+          >
+            {/* If detected timezone isn't in the curated list, show it at the top */}
+            {!TIMEZONES.some((tz) => tz.value === timezone) && timezone && (
+              <option value={timezone}>{timezone}</option>
+            )}
+            {TIMEZONES.map((tz, i) =>
+              tz.disabled ? (
+                <option key={i} disabled value="">{tz.label}</option>
+              ) : (
+                <option key={tz.value} value={tz.value}>{tz.label}</option>
+              )
+            )}
+          </select>
+        </label>
       </div>
 
       {/* Schedule type selector */}
