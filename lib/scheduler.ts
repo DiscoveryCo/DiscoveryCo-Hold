@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db"
-import { getGmailClient, ensureHoldLabel, releaseEmails, stopWatch } from "@/lib/gmail"
+import { getGmailClient, ensureHoldLabel, releaseEmails, stopWatch, registerWatch } from "@/lib/gmail"
 
 export function isAllowedToHold(user: { subscriptionStatus: string; trialEndsAt: Date | null }): boolean {
   if (user.subscriptionStatus === "active") return true
@@ -130,6 +130,31 @@ export async function checkAndDeliverAll() {
     select: { id: true },
   })
   await Promise.allSettled(activeInboxes.map((i) => checkAndDeliverForInbox(i.id)))
+}
+
+export async function renewAllWatches() {
+  const renewBefore = new Date(Date.now() + 24 * 60 * 60 * 1000)
+  const inboxes = await prisma.inbox.findMany({
+    where: {
+      isActive: true,
+      OR: [
+        { watchExpiry: null },
+        { watchExpiry: { lte: renewBefore } },
+      ],
+    },
+  })
+
+  await Promise.allSettled(
+    inboxes.map(async (inbox) => {
+      try {
+        const gmail = await getGmailClient(inbox)
+        await registerWatch(gmail, inbox.id)
+        console.log(`[watchRenewal] Renewed watch for ${inbox.email}`)
+      } catch (err) {
+        console.error(`[watchRenewal] Failed to renew watch for ${inbox.email}:`, err)
+      }
+    })
+  )
 }
 
 export async function enforceTrialExpiry() {

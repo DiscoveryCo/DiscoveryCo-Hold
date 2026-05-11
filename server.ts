@@ -2,7 +2,7 @@ import { createServer } from "http"
 import { parse } from "url"
 import next from "next"
 import cron from "node-cron"
-import { checkAndDeliverAll, enforceTrialExpiry } from "./lib/scheduler"
+import { checkAndDeliverAll, enforceTrialExpiry, renewAllWatches } from "./lib/scheduler"
 
 const dev = process.env.NODE_ENV !== "production"
 const app = next({ dev })
@@ -19,20 +19,9 @@ app.prepare().then(() => {
     enforceTrialExpiry().catch(console.error)
   })
 
-  // Renew gmail.watch() subscriptions daily at 3am
-  cron.schedule("0 3 * * *", async () => {
-    const { prisma } = await import("./lib/db")
-    const { getGmailClient, registerWatch } = await import("./lib/gmail")
-    const inboxes = await prisma.inbox.findMany({
-      where: {
-        isActive: true,
-        watchExpiry: { lte: new Date(Date.now() + 24 * 60 * 60 * 1000) },
-      },
-    })
-    for (const inbox of inboxes) {
-      const gmail = await getGmailClient(inbox)
-      await registerWatch(gmail, inbox.id).catch(console.error)
-    }
+  // Renew Gmail watch subscriptions daily at 3am — watches expire every 7 days
+  cron.schedule("0 3 * * *", () => {
+    renewAllWatches().catch(console.error)
   })
 
   const port = parseInt(process.env.PORT ?? "3000", 10)
