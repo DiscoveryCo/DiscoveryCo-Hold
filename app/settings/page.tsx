@@ -112,22 +112,34 @@ async function SettingsContent({ tab, inboxId }: { tab: string; inboxId?: string
           </Link>
         </div>
 
-        {activeTab === "vip" ? (
-          <VipSettings inboxId={fullInbox.id} domains={domains} emails={emails} keywords={keywords} />
-        ) : (
-          <DeliverySettings
-            inboxId={fullInbox.id}
-            scheduleType={(settings?.scheduleType ?? "custom_weekly") as "interval" | "times" | "custom_daily" | "custom_weekly"}
-            intervalHours={settings?.intervalHours ?? null}
-            timesPerDay={settings?.timesPerDay ?? null}
-            customDailyTimes={customDailyTimes}
-            weeklySchedule={weeklySchedule}
-            dndEnabled={settings?.dndEnabled ?? false}
-            dndFrom={settings?.dndFrom ?? "22:00"}
-            dndTo={settings?.dndTo ?? "07:00"}
-            timezone={settings?.timezone ?? "UTC"}
-          />
-        )}
+        {(() => {
+          const otherInboxes = user.inboxes
+            .filter((i) => i.id !== fullInbox.id)
+            .map((i) => ({ id: i.id, email: i.email }))
+          return activeTab === "vip" ? (
+            <VipSettings
+              inboxId={fullInbox.id}
+              domains={domains}
+              emails={emails}
+              keywords={keywords}
+              otherInboxes={otherInboxes}
+            />
+          ) : (
+            <DeliverySettings
+              inboxId={fullInbox.id}
+              scheduleType={(settings?.scheduleType ?? "custom_weekly") as "interval" | "times" | "custom_daily" | "custom_weekly"}
+              intervalHours={settings?.intervalHours ?? null}
+              timesPerDay={settings?.timesPerDay ?? null}
+              customDailyTimes={customDailyTimes}
+              weeklySchedule={weeklySchedule}
+              dndEnabled={settings?.dndEnabled ?? false}
+              dndFrom={settings?.dndFrom ?? "22:00"}
+              dndTo={settings?.dndTo ?? "07:00"}
+              timezone={settings?.timezone ?? "UTC"}
+              otherInboxes={otherInboxes}
+            />
+          )
+        })()}
       </main>
 
       {/* Footer */}

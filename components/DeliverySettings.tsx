@@ -54,6 +54,11 @@ const TIMEZONES = [
   { label: "Nairobi (EAT)", value: "Africa/Nairobi" },
 ]
 
+interface OtherInbox {
+  id: string
+  email: string
+}
+
 interface Props {
   inboxId: string
   scheduleType: ScheduleType
@@ -65,6 +70,7 @@ interface Props {
   dndFrom: string
   dndTo: string
   timezone: string
+  otherInboxes: OtherInbox[]
 }
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
@@ -132,6 +138,7 @@ export function DeliverySettings({
   dndFrom: initDndFrom,
   dndTo: initDndTo,
   timezone: timezone_init,
+  otherInboxes,
 }: Props) {
   const [scheduleType, setScheduleType] = useState<ScheduleType>(initType)
   const [intervalHours, setIntervalHours] = useState(initInterval ?? 4)
@@ -143,6 +150,31 @@ export function DeliverySettings({
   const [dndTo, setDndTo] = useState(initDndTo)
   const [timezone, setTimezone] = useState(timezone_init)
   const [saving, setSaving] = useState(false)
+  const [copying, setCopying] = useState(false)
+
+  async function copyFromInbox(sourceInboxId: string) {
+    setCopying(true)
+    try {
+      const res = await fetch(`/api/inbox-settings?inboxId=${sourceInboxId}`)
+      if (!res.ok) throw new Error()
+      const data = await res.json()
+      const d = data.delivery
+      setScheduleType(d.scheduleType)
+      setIntervalHours(d.intervalHours ?? 4)
+      setTimesPerDay(d.timesPerDay ?? 2)
+      setCustomDailyTimes(d.customDailyTimes)
+      setWeeklySchedule(d.weeklySchedule)
+      setDndEnabled(d.dndEnabled)
+      setDndFrom(d.dndFrom)
+      setDndTo(d.dndTo)
+      setTimezone(d.timezone)
+      toast.success("Delivery settings copied — save to apply")
+    } catch {
+      toast.error("Failed to copy settings")
+    } finally {
+      setCopying(false)
+    }
+  }
 
   // Auto-detect browser timezone on first visit (when still at the UTC default)
   useEffect(() => {
@@ -401,13 +433,31 @@ export function DeliverySettings({
         )}
       </div>
 
-      <button
-        onClick={save}
-        disabled={saving}
-        className="bg-[#7c7cf8] text-white text-sm font-medium px-5 py-2.5 rounded-lg hover:bg-[#6b6be7] transition-colors disabled:opacity-50"
-      >
-        {saving ? "Saving…" : "Save changes"}
-      </button>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={save}
+          disabled={saving || copying}
+          className="bg-[#7c7cf8] text-white text-sm font-medium px-5 py-2.5 rounded-lg hover:bg-[#6b6be7] transition-colors disabled:opacity-50"
+        >
+          {saving ? "Saving…" : "Save changes"}
+        </button>
+        {otherInboxes.length > 0 && (
+          <select
+            disabled={copying}
+            defaultValue=""
+            onChange={(e) => {
+              if (e.target.value) copyFromInbox(e.target.value)
+              e.target.value = ""
+            }}
+            className="border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-600 bg-white disabled:opacity-50 max-w-44"
+          >
+            <option value="">Copy from inbox…</option>
+            {otherInboxes.map((inbox) => (
+              <option key={inbox.id} value={inbox.id}>{inbox.email}</option>
+            ))}
+          </select>
+        )}
+      </div>
     </div>
   )
 }

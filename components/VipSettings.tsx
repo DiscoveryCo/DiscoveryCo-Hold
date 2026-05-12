@@ -4,14 +4,20 @@ import { useState } from "react"
 import { toast } from "sonner"
 import { X } from "lucide-react"
 
+interface OtherInbox {
+  id: string
+  email: string
+}
+
 interface Props {
   inboxId: string
   domains: string[]
   emails: string[]
   keywords: string[]
+  otherInboxes: OtherInbox[]
 }
 
-export function VipSettings({ inboxId, domains: initDomains, emails: initEmails, keywords: initKeywords }: Props) {
+export function VipSettings({ inboxId, domains: initDomains, emails: initEmails, keywords: initKeywords, otherInboxes }: Props) {
   const [domains, setDomains] = useState<string[]>(initDomains)
   const [emails, setEmails] = useState<string[]>(initEmails)
   const [keywords, setKeywords] = useState<string[]>(initKeywords)
@@ -19,6 +25,24 @@ export function VipSettings({ inboxId, domains: initDomains, emails: initEmails,
   const [emailInput, setEmailInput] = useState("")
   const [keywordInput, setKeywordInput] = useState("")
   const [saving, setSaving] = useState(false)
+  const [copying, setCopying] = useState(false)
+
+  async function copyFromInbox(sourceInboxId: string) {
+    setCopying(true)
+    try {
+      const res = await fetch(`/api/inbox-settings?inboxId=${sourceInboxId}`)
+      if (!res.ok) throw new Error()
+      const data = await res.json()
+      setDomains(data.vip.domains)
+      setEmails(data.vip.emails)
+      setKeywords(data.vip.keywords)
+      toast.success("VIP settings copied — save to apply")
+    } catch {
+      toast.error("Failed to copy settings")
+    } finally {
+      setCopying(false)
+    }
+  }
 
   function addToList(
     input: string,
@@ -153,13 +177,31 @@ export function VipSettings({ inboxId, domains: initDomains, emails: initEmails,
         </p>
       </section>
 
-      <button
-        onClick={save}
-        disabled={saving}
-        className="bg-[#7c7cf8] text-white text-sm font-medium px-5 py-2.5 rounded-lg hover:bg-[#6b6be7] transition-colors disabled:opacity-50"
-      >
-        {saving ? "Saving…" : "Save changes"}
-      </button>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={save}
+          disabled={saving || copying}
+          className="bg-[#7c7cf8] text-white text-sm font-medium px-5 py-2.5 rounded-lg hover:bg-[#6b6be7] transition-colors disabled:opacity-50"
+        >
+          {saving ? "Saving…" : "Save changes"}
+        </button>
+        {otherInboxes.length > 0 && (
+          <select
+            disabled={copying}
+            defaultValue=""
+            onChange={(e) => {
+              if (e.target.value) copyFromInbox(e.target.value)
+              e.target.value = ""
+            }}
+            className="border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-600 bg-white disabled:opacity-50 max-w-44"
+          >
+            <option value="">Copy from inbox…</option>
+            {otherInboxes.map((inbox) => (
+              <option key={inbox.id} value={inbox.id}>{inbox.email}</option>
+            ))}
+          </select>
+        )}
+      </div>
     </div>
   )
 }
