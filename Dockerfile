@@ -6,6 +6,7 @@ RUN npm install
 COPY prisma ./prisma
 RUN npx prisma generate
 COPY . .
+ENV STRIPE_SECRET_KEY=sk_test_build_placeholder
 RUN npm run build
 ENV NODE_ENV=production
 CMD ["sh", "-c", "npx prisma db push && node_modules/.bin/tsx server.ts"]
