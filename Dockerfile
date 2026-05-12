@@ -6,6 +6,6 @@ RUN npm install
 COPY prisma ./prisma
 RUN npx prisma generate
 COPY . .
-RUN mkdir -p data
-EXPOSE 3002
+RUN npm run build
+ENV NODE_ENV=production
 CMD ["sh", "-c", "npx prisma db push && node_modules/.bin/tsx server.ts"]
