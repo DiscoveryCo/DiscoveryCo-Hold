@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
+import { getGmailClient, ensureHoldLabel, releaseEmails } from "@/lib/gmail"
 
 export async function POST(req: NextRequest) {
   const session = await auth()
@@ -22,10 +23,23 @@ export async function POST(req: NextRequest) {
       where: { id: inboxId },
       data: { pausedUntil },
     })
+
+    // When pausing, release any currently held emails into the inbox
+    if (pausedUntil) {
+      const gmail = await getGmailClient(inbox)
+      const holdLabelId = await ensureHoldLabel(gmail, inbox.id)
+      const count = await releaseEmails(gmail, holdLabelId)
+      if (count > 0) {
+        await prisma.activityLog.create({
+          data: { inboxId: inbox.id, emailCount: count, slotTime: "Hold lifted" },
+        })
+      }
+      return NextResponse.json({ pausedUntil: pausedUntil.toISOString(), released: count })
+    }
   } catch (err) {
     console.error("pause-inbox error:", err)
     return NextResponse.json({ error: String(err) }, { status: 500 })
   }
 
-  return NextResponse.json({ pausedUntil: pausedUntil?.toISOString() ?? null })
+  return NextResponse.json({ pausedUntil: null })
 }
