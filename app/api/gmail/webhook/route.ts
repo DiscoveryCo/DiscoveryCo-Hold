@@ -6,24 +6,38 @@ import { isAllowedToHold } from "@/lib/scheduler"
 export async function POST(req: NextRequest) {
   const secret = process.env.GMAIL_WEBHOOK_SECRET
   if (secret && req.nextUrl.searchParams.get("token") !== secret) {
+    console.log("webhook: token mismatch, rejecting")
     return NextResponse.json({}, { status: 401 })
   }
 
   try {
     const body = await req.json()
     const encoded = body?.message?.data
-    if (!encoded) return NextResponse.json({}, { status: 200 })
+    if (!encoded) {
+      console.log("webhook: no message data")
+      return NextResponse.json({}, { status: 200 })
+    }
 
     const decoded = JSON.parse(Buffer.from(encoded, "base64").toString("utf-8"))
     const { emailAddress, historyId } = decoded
+    console.log(`webhook: received for ${emailAddress}, historyId=${historyId}`)
 
     const inbox = await prisma.inbox.findUnique({
       where: { email: emailAddress },
       include: { vipRules: true, settings: true, user: true },
     })
-    if (!inbox || !inbox.isActive) return NextResponse.json({}, { status: 200 })
-    if (!isAllowedToHold(inbox.user)) return NextResponse.json({}, { status: 200 })
-    if (inbox.pausedUntil && inbox.pausedUntil > new Date()) return NextResponse.json({}, { status: 200 })
+    if (!inbox || !inbox.isActive) {
+      console.log(`webhook: inbox not found or inactive for ${emailAddress}`)
+      return NextResponse.json({}, { status: 200 })
+    }
+    if (!isAllowedToHold(inbox.user)) {
+      console.log(`webhook: subscription not allowed for ${emailAddress}`)
+      return NextResponse.json({}, { status: 200 })
+    }
+    if (inbox.pausedUntil && inbox.pausedUntil > new Date()) {
+      console.log(`webhook: inbox paused until ${inbox.pausedUntil} for ${emailAddress}`)
+      return NextResponse.json({}, { status: 200 })
+    }
 
     const gmail = await getGmailClient(inbox)
     const holdLabelId = await ensureHoldLabel(gmail, inbox.id)
