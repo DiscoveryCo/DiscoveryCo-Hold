@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
       })
     }
     await stopWatch(gmail)
-    await prisma.inbox.update({ where: { id: inbox.id }, data: { isActive: false } })
+    await prisma.inbox.update({ where: { id: inbox.id }, data: { isActive: false, pausedUntil: null } })
     return NextResponse.json({ isActive: false })
   } else {
     await ensureHoldLabel(gmail, inbox.id)

@@ -32,7 +32,9 @@ export function DashboardActions({ isActive: initialActive, inboxId, pausedUntil
   )
   const [loading, setLoading] = useState<"toggle" | "deliver" | "pause" | null>(null)
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [pausedDropdownOpen, setPausedDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const pausedDropdownRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
 
   const isPaused = pausedUntil && pausedUntil > new Date()
@@ -43,8 +45,17 @@ export function DashboardActions({ isActive: initialActive, inboxId, pausedUntil
         setDropdownOpen(false)
       }
     }
+    function handleClickOutsidePaused(e: MouseEvent) {
+      if (pausedDropdownRef.current && !pausedDropdownRef.current.contains(e.target as Node)) {
+        setPausedDropdownOpen(false)
+      }
+    }
     document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
+    document.addEventListener("mousedown", handleClickOutsidePaused)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+      document.removeEventListener("mousedown", handleClickOutsidePaused)
+    }
   }, [])
 
   async function handleDeliver() {
@@ -82,6 +93,7 @@ export function DashboardActions({ isActive: initialActive, inboxId, pausedUntil
       if (!res.ok) throw new Error(json.error)
       setIsActive(json.isActive)
       setPausedUntil(null)
+      setPausedDropdownOpen(false)
       toast.success(json.isActive ? "DiscoveryMail started" : "DiscoveryMail stopped — inbox restored")
       router.refresh()
     } catch {
@@ -143,18 +155,37 @@ export function DashboardActions({ isActive: initialActive, inboxId, pausedUntil
 
       {/* Paused state */}
       {isActive && isPaused && (
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-700 text-sm font-medium px-4 py-2 rounded-lg">
+        <div className="relative flex items-stretch" ref={pausedDropdownRef}>
+          <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-700 text-sm font-medium px-4 py-2 rounded-l-lg">
             <PauseCircle className="w-4 h-4" />
             Hold lifted until {format(pausedUntil!, "h:mm a")}
           </div>
           <button
-            onClick={handleResume}
+            onClick={() => setPausedDropdownOpen((o) => !o)}
             disabled={loading !== null}
-            className="text-sm text-[#4D4D4D] hover:text-[#161616] font-medium transition-colors disabled:opacity-50"
+            className="flex items-center bg-amber-50 hover:bg-amber-100 text-amber-700 text-sm font-medium px-2 py-2 rounded-r-lg border border-l-0 border-amber-200 transition-colors disabled:opacity-50"
+            aria-label="More options"
           >
-            {loading === "pause" ? "Resuming…" : "Resume"}
+            <ChevronDown className="w-4 h-4" />
           </button>
+          {pausedDropdownOpen && (
+            <div className="absolute mt-1 right-0 top-full z-50 bg-[#FFFBEC] border border-amber-200 rounded-xl shadow-lg py-1 min-w-44">
+              <button
+                onClick={() => { setPausedDropdownOpen(false); handleResume() }}
+                disabled={loading !== null}
+                className="w-full text-left px-4 py-2.5 text-sm text-[#161616] hover:bg-amber-100 transition-colors disabled:opacity-50"
+              >
+                Resume
+              </button>
+              <button
+                onClick={() => { setPausedDropdownOpen(false); handleToggle() }}
+                disabled={loading !== null}
+                className="w-full text-left px-4 py-2.5 text-sm text-[#F43F5E] hover:bg-amber-100 transition-colors disabled:opacity-50"
+              >
+                Stop DiscoveryMail
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -164,7 +195,7 @@ export function DashboardActions({ isActive: initialActive, inboxId, pausedUntil
           <button
             onClick={handleToggle}
             disabled={loading !== null}
-            className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium pl-4 pr-3 py-2 rounded-l-lg transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 bg-[#F43F5E] hover:bg-[#d93652] text-white text-sm font-medium pl-4 pr-3 py-2 rounded-l-lg transition-colors disabled:opacity-50"
           >
             <StopCircle className="w-4 h-4" />
             {loading === "toggle" ? "Stopping…" : "Stop DiscoveryMail"}
@@ -172,7 +203,7 @@ export function DashboardActions({ isActive: initialActive, inboxId, pausedUntil
           <button
             onClick={() => setDropdownOpen((o) => !o)}
             disabled={loading !== null}
-            className="flex items-center bg-red-500 hover:bg-red-600 text-white text-sm font-medium px-2 py-2 rounded-r-lg border-l border-red-400 transition-colors disabled:opacity-50"
+            className="flex items-center bg-[#F43F5E] hover:bg-[#d93652] text-white text-sm font-medium px-2 py-2 rounded-r-lg border-l border-[#e0304a] transition-colors disabled:opacity-50"
             aria-label="Pause options"
           >
             <ChevronDown className="w-4 h-4" />
