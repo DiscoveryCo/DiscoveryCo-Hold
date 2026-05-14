@@ -31,7 +31,7 @@ export function HeldEmailsCard({ heldCount, isActive }: Props) {
   }
 
   return (
-    <div className="bg-[#FFFDFB] border border-[#D1D0D0] rounded-xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] p-5">
+    <div className="bg-white border border-[#E5E7EB] rounded-xl p-5">
       <div className="flex items-center justify-between mb-2">
         <p className="text-xs font-semibold text-[#4D4D4D] uppercase tracking-widest">Held Emails</p>
         {isActive && (

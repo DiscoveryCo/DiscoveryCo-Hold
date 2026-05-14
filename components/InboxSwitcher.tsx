@@ -48,15 +48,15 @@ export function InboxSwitcher({ inboxes, currentInboxId, hrefPrefix = "/dashboar
       </button>
 
       {open && (
-        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-64 bg-[#FFFDFB] border border-[#D1D0D0] rounded-xl shadow-lg overflow-hidden z-50">
-          <div className="px-4 py-2 text-xs text-[#4D4D4D] uppercase tracking-widest font-semibold border-b border-[#F2F0EE]">
+        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-64 bg-white border border-[#E5E7EB] rounded-xl shadow-lg overflow-hidden z-50">
+          <div className="px-4 py-2 text-xs text-[#4D4D4D] uppercase tracking-widest font-semibold border-b border-gray-100">
             Inboxes
           </div>
           {inboxes.map((inbox) => (
             <button
               key={inbox.id}
               onClick={() => switchInbox(inbox.id)}
-              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#F2F0EE] transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
             >
               {inbox.id === currentInboxId ? (
                 <Check className="w-4 h-4 text-[#A78BFA] flex-shrink-0" />
@@ -71,10 +71,10 @@ export function InboxSwitcher({ inboxes, currentInboxId, hrefPrefix = "/dashboar
               <span className="text-sm text-[#161616] truncate">{inbox.email}</span>
             </button>
           ))}
-          <div className="border-t border-[#F2F0EE]">
+          <div className="border-t border-gray-100">
             <a
               href="/connect-inbox"
-              className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#4D4D4D] hover:text-[#161616] hover:bg-[#F2F0EE] transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#4D4D4D] hover:text-[#161616] hover:bg-gray-50 transition-colors"
               onClick={() => setOpen(false)}
             >
               <PlusCircle className="w-4 h-4 flex-shrink-0" />

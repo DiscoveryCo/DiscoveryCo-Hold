@@ -37,12 +37,12 @@ export default async function AccountPage() {
       ? { label: trialDaysLeft !== null ? `Trial · ${trialDaysLeft}d left` : "Trial", classes: "bg-[#ededff] text-[#A78BFA]" }
       : subStatus === "past_due"
       ? { label: "Payment failed", classes: "bg-red-50 text-red-500" }
-      : { label: "Expired", classes: "bg-[#F2F0EE] text-[#4D4D4D]" }
+      : { label: "Expired", classes: "bg-gray-50 text-[#4D4D4D]" }
 
   return (
-    <div className="min-h-screen bg-[#F2F0EE] flex flex-col">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <header className="bg-[#FFFDFB] border-b border-[#D1D0D0] px-6 py-3 flex items-center gap-4">
+      <header className="bg-white border-b border-[#E5E7EB] px-6 py-3 flex items-center gap-4">
         <Link href="/dashboard" className="text-[#4D4D4D] hover:text-[#4D4D4D]">
           <ArrowLeft className="w-5 h-5" />
         </Link>
@@ -59,7 +59,7 @@ export default async function AccountPage() {
         <h1 className="text-2xl font-bold text-[#161616] mb-6">Account</h1>
 
         {/* Profile */}
-        <div className="bg-[#FFFDFB] border border-[#D1D0D0] rounded-xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] p-6 mb-4">
+        <div className="bg-white border border-[#E5E7EB] rounded-xl p-6 mb-4">
           <div className="flex items-center gap-4">
             {primaryInbox?.image && (
               <Image
@@ -79,7 +79,7 @@ export default async function AccountPage() {
         </div>
 
         {/* Connected inboxes */}
-        <div className="bg-[#FFFDFB] border border-[#D1D0D0] rounded-xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] p-6 mb-4">
+        <div className="bg-white border border-[#E5E7EB] rounded-xl p-6 mb-4">
           <h2 className="font-semibold text-[#161616] mb-1">Inboxes</h2>
           <p className="text-sm text-[#4D4D4D] mb-4">All your connected Gmail accounts.</p>
 
@@ -87,12 +87,12 @@ export default async function AccountPage() {
             {user.inboxes.map((inbox) => (
               <div
                 key={inbox.id}
-                className="flex items-center gap-3 py-3 border-b border-[#F2F0EE] last:border-0"
+                className="flex items-center gap-3 py-3 border-b border-gray-100 last:border-0"
               >
                 {inbox.image ? (
                   <Image src={inbox.image} alt="" width={40} height={40} className="rounded-lg flex-shrink-0" />
                 ) : (
-                  <div className="w-10 h-10 rounded-lg bg-[#F2F0EE] flex-shrink-0" />
+                  <div className="w-10 h-10 rounded-lg bg-gray-50 flex-shrink-0" />
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -110,7 +110,7 @@ export default async function AccountPage() {
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                       inbox.isActive
                         ? "bg-green-50 text-green-600"
-                        : "bg-[#F2F0EE] text-[#4D4D4D]"
+                        : "bg-gray-50 text-[#4D4D4D]"
                     }`}>
                       {inbox.isActive ? "Active" : "Paused"}
                     </span>
@@ -133,7 +133,7 @@ export default async function AccountPage() {
         </div>
 
         {/* Danger zone */}
-        <div className="bg-[#FFFDFB] border border-[#D1D0D0] rounded-xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] p-6">
+        <div className="bg-white border border-[#E5E7EB] rounded-xl p-6">
           <h2 className="font-semibold text-[#161616] mb-1">Delete Account</h2>
           <p className="text-sm text-[#4D4D4D] mb-4">
             Permanently deletes your account and all {user.inboxes.length} connected{" "}
@@ -144,7 +144,7 @@ export default async function AccountPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-[#D1D0D0] py-6 px-6 flex items-center justify-between">
+      <footer className="border-t border-[#E5E7EB] py-6 px-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Mail className="w-4 h-4 text-[#A78BFA]" />
           <span className="text-sm font-semibold text-[#161616]">DiscoveryMail</span>

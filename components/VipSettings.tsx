@@ -84,10 +84,10 @@ export function VipSettings({ inboxId, domains: initDomains, emails: initEmails,
         <p className="text-sm text-[#4D4D4D] mb-3">
           Emails from any of these domains will be immediately delivered.
         </p>
-        <div className="border border-[#D1D0D0] rounded-lg bg-[#F2F0EE] min-h-20 p-3">
+        <div className="border border-[#E5E7EB] rounded-lg bg-gray-50 min-h-20 p-3">
           <div className="flex flex-wrap gap-2 mb-2">
             {domains.map((d) => (
-              <span key={d} className="flex items-center gap-1 bg-[#FFFDFB] border border-[#D1D0D0] rounded px-2 py-1 text-sm text-[#161616]">
+              <span key={d} className="flex items-center gap-1 bg-white border border-[#E5E7EB] rounded px-2 py-1 text-sm text-[#161616]">
                 {d}
                 <button onClick={() => removeFrom(d, domains, setDomains)} className="text-[#4D4D4D] hover:text-[#4D4D4D] ml-1">
                   <X className="w-3 h-3" />
@@ -116,10 +116,10 @@ export function VipSettings({ inboxId, domains: initDomains, emails: initEmails,
         <p className="text-sm text-[#4D4D4D] mb-3">
           Emails from any of these addresses will be immediately delivered.
         </p>
-        <div className="border border-[#D1D0D0] rounded-lg bg-[#F2F0EE] min-h-20 p-3">
+        <div className="border border-[#E5E7EB] rounded-lg bg-gray-50 min-h-20 p-3">
           <div className="flex flex-wrap gap-2 mb-2">
             {emails.map((e) => (
-              <span key={e} className="flex items-center gap-1 bg-[#FFFDFB] border border-[#D1D0D0] rounded px-2 py-1 text-sm text-[#161616]">
+              <span key={e} className="flex items-center gap-1 bg-white border border-[#E5E7EB] rounded px-2 py-1 text-sm text-[#161616]">
                 {e}
                 <button onClick={() => removeFrom(e, emails, setEmails)} className="text-[#4D4D4D] hover:text-[#4D4D4D] ml-1">
                   <X className="w-3 h-3" />
@@ -148,10 +148,10 @@ export function VipSettings({ inboxId, domains: initDomains, emails: initEmails,
         <p className="text-sm text-[#4D4D4D] mb-3">
           Emails containing any of these words will be immediately delivered.
         </p>
-        <div className="border border-[#D1D0D0] rounded-lg bg-[#F2F0EE] min-h-20 p-3">
+        <div className="border border-[#E5E7EB] rounded-lg bg-gray-50 min-h-20 p-3">
           <div className="flex flex-wrap gap-2 mb-2">
             {keywords.map((k) => (
-              <span key={k} className="flex items-center gap-1 bg-[#FFFDFB] border border-[#D1D0D0] rounded px-2 py-1 text-sm text-[#161616]">
+              <span key={k} className="flex items-center gap-1 bg-white border border-[#E5E7EB] rounded px-2 py-1 text-sm text-[#161616]">
                 {k}
                 <button onClick={() => removeFrom(k, keywords, setKeywords)} className="text-[#4D4D4D] hover:text-[#4D4D4D] ml-1">
                   <X className="w-3 h-3" />
@@ -193,7 +193,7 @@ export function VipSettings({ inboxId, domains: initDomains, emails: initEmails,
               if (e.target.value) copyFromInbox(e.target.value)
               e.target.value = ""
             }}
-            className="border border-[#D1D0D0] rounded-lg px-3 py-2.5 text-sm text-[#4D4D4D] bg-[#FFFDFB] disabled:opacity-50 max-w-44"
+            className="border border-[#E5E7EB] rounded-lg px-3 py-2.5 text-sm text-[#4D4D4D] bg-white disabled:opacity-50 max-w-44"
           >
             <option value="">Copy from inbox…</option>
             {otherInboxes.map((inbox) => (

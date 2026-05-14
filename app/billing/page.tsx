@@ -78,9 +78,9 @@ export default async function BillingPage({
   }
 
   return (
-    <div className="min-h-screen bg-[#F2F0EE] flex flex-col">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <header className="bg-[#FFFDFB] border-b border-[#D1D0D0] px-6 py-3 flex items-center gap-4">
+      <header className="bg-white border-b border-[#E5E7EB] px-6 py-3 flex items-center gap-4">
         <Link href="/dashboard" className="text-[#4D4D4D] hover:text-[#4D4D4D]">
           <ArrowLeft className="w-5 h-5" />
         </Link>
@@ -123,7 +123,7 @@ export default async function BillingPage({
           </div>
         )}
         {isCanceled && (
-          <div className="bg-[#F2F0EE] border border-[#D1D0D0] text-[#4D4D4D] text-sm rounded-xl px-4 py-3 mb-6">
+          <div className="bg-gray-50 border border-[#E5E7EB] text-[#4D4D4D] text-sm rounded-xl px-4 py-3 mb-6">
             Your subscription has ended. Resubscribe below to resume email holding.
           </div>
         )}
@@ -137,7 +137,7 @@ export default async function BillingPage({
         />
       </main>
 
-      <footer className="border-t border-[#D1D0D0] py-6 px-6 flex items-center justify-between">
+      <footer className="border-t border-[#E5E7EB] py-6 px-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Mail className="w-4 h-4 text-[#A78BFA]" />
           <span className="text-sm font-semibold text-[#161616]">DiscoveryMail</span>

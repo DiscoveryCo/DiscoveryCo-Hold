@@ -36,10 +36,10 @@ export function UserMenu({ email, image, settingsHref, dashboardHref = "/dashboa
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-44 bg-[#FFFDFB] border border-[#D1D0D0] rounded-xl shadow-lg overflow-hidden z-50">
+        <div className="absolute right-0 top-full mt-2 w-44 bg-white border border-[#E5E7EB] rounded-xl shadow-lg overflow-hidden z-50">
           <a
             href={dashboardHref}
-            className="flex items-center gap-2 px-4 py-3 text-sm text-[#4D4D4D] hover:bg-[#F2F0EE] transition-colors"
+            className="flex items-center gap-2 px-4 py-3 text-sm text-[#4D4D4D] hover:bg-gray-50 transition-colors"
             onClick={() => setOpen(false)}
           >
             <LayoutDashboard className="w-4 h-4" />
@@ -47,7 +47,7 @@ export function UserMenu({ email, image, settingsHref, dashboardHref = "/dashboa
           </a>
           <a
             href="/account"
-            className="flex items-center gap-2 px-4 py-3 text-sm text-[#4D4D4D] hover:bg-[#F2F0EE] transition-colors"
+            className="flex items-center gap-2 px-4 py-3 text-sm text-[#4D4D4D] hover:bg-gray-50 transition-colors"
             onClick={() => setOpen(false)}
           >
             <User className="w-4 h-4" />
@@ -55,7 +55,7 @@ export function UserMenu({ email, image, settingsHref, dashboardHref = "/dashboa
           </a>
           <a
             href={settingsHref}
-            className="flex items-center gap-2 px-4 py-3 text-sm text-[#4D4D4D] hover:bg-[#F2F0EE] transition-colors"
+            className="flex items-center gap-2 px-4 py-3 text-sm text-[#4D4D4D] hover:bg-gray-50 transition-colors"
             onClick={() => setOpen(false)}
           >
             <Settings className="w-4 h-4" />
@@ -63,13 +63,13 @@ export function UserMenu({ email, image, settingsHref, dashboardHref = "/dashboa
           </a>
           <a
             href="/billing"
-            className="flex items-center gap-2 px-4 py-3 text-sm text-[#4D4D4D] hover:bg-[#F2F0EE] transition-colors"
+            className="flex items-center gap-2 px-4 py-3 text-sm text-[#4D4D4D] hover:bg-gray-50 transition-colors"
             onClick={() => setOpen(false)}
           >
             <CreditCard className="w-4 h-4" />
             Billing
           </a>
-          <div className="border-t border-[#F2F0EE]" />
+          <div className="border-t border-gray-100" />
           <form
             action={async () => {
               const { signOut } = await import("next-auth/react")
@@ -78,7 +78,7 @@ export function UserMenu({ email, image, settingsHref, dashboardHref = "/dashboa
           >
             <button
               type="submit"
-              className="w-full flex items-center gap-2 px-4 py-3 text-sm text-[#4D4D4D] hover:bg-[#F2F0EE] transition-colors"
+              className="w-full flex items-center gap-2 px-4 py-3 text-sm text-[#4D4D4D] hover:bg-gray-50 transition-colors"
             >
               <LogOut className="w-4 h-4" />
               Log out

@@ -8,8 +8,8 @@ export default async function ConnectInboxPage() {
   if (!session?.user?.email) redirect("/login")
 
   return (
-    <div className="min-h-screen bg-[#F2F0EE] flex flex-col">
-      <header className="bg-[#FFFDFB] border-b border-[#D1D0D0] px-6 py-3 flex items-center gap-4">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <header className="bg-white border-b border-[#E5E7EB] px-6 py-3 flex items-center gap-4">
         <Link href="/dashboard" className="text-[#4D4D4D] hover:text-[#4D4D4D]">
           <ArrowLeft className="w-5 h-5" />
         </Link>
@@ -20,7 +20,7 @@ export default async function ConnectInboxPage() {
       </header>
 
       <main className="flex-1 flex items-center justify-center px-6 py-12">
-        <div className="max-w-md w-full bg-[#FFFDFB] rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] border border-[#D1D0D0] p-8">
+        <div className="max-w-md w-full bg-white rounded-2xl border border-[#E5E7EB] p-8">
           <div className="flex items-center justify-center w-12 h-12 bg-[#f0f0ff] rounded-xl mb-6">
             <ShieldCheck className="w-6 h-6 text-[#A78BFA]" />
           </div>

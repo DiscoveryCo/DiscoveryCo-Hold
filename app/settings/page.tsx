@@ -61,9 +61,9 @@ async function SettingsContent({ tab, inboxId }: { tab: string; inboxId?: string
   const baseHref = `/settings?inbox=${fullInbox.id}`
 
   return (
-    <div className="min-h-screen bg-[#F2F0EE]">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-[#FFFDFB] border-b border-[#D1D0D0] px-6 py-3 grid grid-cols-3 items-center">
+      <header className="bg-white border-b border-[#E5E7EB] px-6 py-3 grid grid-cols-3 items-center">
         <div className="flex items-center gap-3">
           <Link href={dashboardHref} className="text-[#4D4D4D] hover:text-[#4D4D4D]">
             <ArrowLeft className="w-5 h-5" />
@@ -89,7 +89,7 @@ async function SettingsContent({ tab, inboxId }: { tab: string; inboxId?: string
         <h1 className="text-2xl font-bold text-[#161616] mb-6">Settings</h1>
 
         {/* Tabs */}
-        <div className="flex border-b border-[#D1D0D0] mb-8">
+        <div className="flex border-b border-[#E5E7EB] mb-8">
           <Link
             href={`${baseHref}&tab=vip`}
             className={`px-4 pb-3 text-sm font-medium border-b-2 transition-colors ${
@@ -143,7 +143,7 @@ async function SettingsContent({ tab, inboxId }: { tab: string; inboxId?: string
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-[#D1D0D0] py-6 px-6 flex items-center justify-between mt-10">
+      <footer className="border-t border-[#E5E7EB] py-6 px-6 flex items-center justify-between mt-10">
         <div className="flex items-center gap-2">
           <Mail className="w-4 h-4 text-[#A78BFA]" />
           <span className="text-sm font-semibold text-[#161616]">DiscoveryMail</span>

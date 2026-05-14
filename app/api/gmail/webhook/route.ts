@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
     })
     if (!inbox || !inbox.isActive) return NextResponse.json({}, { status: 200 })
     if (!isAllowedToHold(inbox.user)) return NextResponse.json({}, { status: 200 })
+    if (inbox.pausedUntil && inbox.pausedUntil > new Date()) return NextResponse.json({}, { status: 200 })
 
     const gmail = await getGmailClient(inbox)
     const holdLabelId = await ensureHoldLabel(gmail, inbox.id)

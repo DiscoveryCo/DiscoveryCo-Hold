@@ -34,6 +34,7 @@ model Inbox {
   refreshToken String?
   tokenExpiry  DateTime?
   isActive     Boolean   @default(false)
+  pausedUntil  DateTime?
   holdLabelId  String?
   historyId    String?
   watchExpiry  DateTime?

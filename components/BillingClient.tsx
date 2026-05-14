@@ -141,7 +141,7 @@ export function BillingClient({
     return (
       <div className="space-y-4">
         {/* Plan card */}
-        <div className="bg-[#FFFDFB] border border-[#D1D0D0] rounded-xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] p-6">
+        <div className="bg-white border border-[#E5E7EB] rounded-xl p-6">
           <h2 className="font-semibold text-[#161616] mb-4">Plan</h2>
           <div className="flex items-center justify-between">
             <div>
@@ -200,7 +200,7 @@ export function BillingClient({
         </div>
 
         {/* Payment method */}
-        <div className="bg-[#FFFDFB] border border-[#D1D0D0] rounded-xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] p-6">
+        <div className="bg-white border border-[#E5E7EB] rounded-xl p-6">
           <h2 className="font-semibold text-[#161616] mb-4">Payment Method</h2>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-[#4D4D4D] text-sm">
@@ -223,7 +223,7 @@ export function BillingClient({
         </div>
 
         {/* Invoice history */}
-        <div className="bg-[#FFFDFB] border border-[#D1D0D0] rounded-xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] p-6">
+        <div className="bg-white border border-[#E5E7EB] rounded-xl p-6">
           <h2 className="font-semibold text-[#161616] mb-4">Invoice History</h2>
           <div className="flex items-center justify-between">
             <p className="text-sm text-[#4D4D4D]">View and download past invoices.</p>
@@ -250,7 +250,7 @@ export function BillingClient({
     <div className="max-w-sm mx-auto">
       <p className="text-xs text-[#4D4D4D] text-center mb-4 italic">All prices are in USD.</p>
 
-      <div className="bg-[#FFFDFB] border border-[#D1D0D0] rounded-2xl p-6 shadow-sm">
+      <div className="bg-white border border-[#E5E7EB] rounded-2xl p-6 shadow-sm">
         <h3 className="text-xl font-bold text-[#161616] text-center mb-4">DiscoveryMail</h3>
 
         {/* Price */}

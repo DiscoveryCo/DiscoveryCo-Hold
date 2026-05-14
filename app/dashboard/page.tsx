@@ -100,10 +100,10 @@ async function DashboardContent({ page, inboxId }: { page: number; inboxId?: str
   const settingsHref = `/settings?inbox=${fullInbox.id}`
 
   return (
-    <div className="min-h-screen bg-[#F2F0EE] flex flex-col">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {fullInbox.isActive && <AutoRefresh intervalMs={30000} />}
       {/* Header */}
-      <header className="bg-[#FFFDFB] border-b border-[#D1D0D0] px-6 py-3 grid grid-cols-3 items-center">
+      <header className="bg-white border-b border-[#E5E7EB] px-6 py-3 grid grid-cols-3 items-center">
         <div className="flex items-center gap-2">
           <Mail className="w-5 h-5 text-[#A78BFA]" />
           <span className="font-bold text-lg tracking-tight text-[#161616]">DiscoveryMail</span>
@@ -167,12 +167,12 @@ async function DashboardContent({ page, inboxId }: { page: number; inboxId?: str
               <p className="text-[#4D4D4D] text-xs mt-0.5">Member since {joinDate}</p>
             </div>
           </div>
-          <DashboardActions key={fullInbox.id} isActive={fullInbox.isActive} inboxId={fullInbox.id} />
+          <DashboardActions key={fullInbox.id} isActive={fullInbox.isActive} inboxId={fullInbox.id} pausedUntil={fullInbox.pausedUntil?.toISOString() ?? null} />
         </div>
 
         {/* Stat cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <div className="bg-[#FFFDFB] border border-[#D1D0D0] rounded-xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] p-5">
+          <div className="bg-white border border-[#E5E7EB] rounded-xl p-5">
             <p className="text-xs font-semibold text-[#4D4D4D] uppercase tracking-widest mb-2">
               VIP List
             </p>
@@ -186,7 +186,7 @@ async function DashboardContent({ page, inboxId }: { page: number; inboxId?: str
             </Link>
           </div>
 
-          <div className="bg-[#FFFDFB] border border-[#D1D0D0] rounded-xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] p-5">
+          <div className="bg-white border border-[#E5E7EB] rounded-xl p-5">
             <p className="text-xs font-semibold text-[#4D4D4D] uppercase tracking-widest mb-2">
               Delivery
             </p>
@@ -211,10 +211,10 @@ async function DashboardContent({ page, inboxId }: { page: number; inboxId?: str
             <h2 className="text-lg font-semibold text-[#161616]">Activity Log</h2>
           </div>
 
-          <div className="bg-[#FFFDFB] border border-[#D1D0D0] rounded-xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] overflow-hidden">
+          <div className="bg-white border border-[#E5E7EB] rounded-xl overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[#F2F0EE] text-[#4D4D4D] text-xs uppercase tracking-widest">
+                <tr className="border-b border-gray-100 text-[#4D4D4D] text-xs uppercase tracking-widest">
                   <th className="text-left px-5 py-3 font-medium w-48">Date</th>
                   <th className="text-right px-5 py-3 font-medium">Emails Processed</th>
                 </tr>
@@ -228,7 +228,7 @@ async function DashboardContent({ page, inboxId }: { page: number; inboxId?: str
                   </tr>
                 ) : (
                   fullInbox.activityLogs.map((log) => (
-                    <tr key={log.id} className="border-b border-[#F2F0EE] hover:bg-[#F2F0EE] transition-colors">
+                    <tr key={log.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                       <td className="px-5 py-3">
                         <p className="text-[#161616]">{formatDate(log.deliveredAt)}</p>
                         {log.slotTime && <p className="text-[#4D4D4D] text-xs mt-0.5">{log.slotTime}</p>}
@@ -246,7 +246,7 @@ async function DashboardContent({ page, inboxId }: { page: number; inboxId?: str
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-[#D1D0D0] py-6 px-6 flex items-center justify-between mt-4">
+      <footer className="border-t border-[#E5E7EB] py-6 px-6 flex items-center justify-between mt-4">
         <div className="flex items-center gap-2">
           <Mail className="w-4 h-4 text-[#A78BFA]" />
           <span className="text-sm font-semibold text-[#161616]">DiscoveryMail</span>
