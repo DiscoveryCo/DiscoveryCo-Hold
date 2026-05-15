@@ -14,13 +14,16 @@ interface Inbox {
   isActive: boolean
   isPrimary: boolean
   isPaidSeat: boolean
+  isSubscribed: boolean
   scheduledRemovalAt: string | null
 }
 
 // ── Remove a single non-primary inbox ──────────────────────────────────────
 
 export function RemoveInboxButton({ inbox }: { inbox: Inbox }) {
-  const [mode, setMode] = useState<"idle" | "confirm-deactivate" | "confirm-remove">("idle")
+  const [mode, setMode] = useState<
+    "idle" | "confirm-deactivate" | "confirm-remove" | "confirm-remove-now" | "confirm-reactivate"
+  >("idle")
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
@@ -43,10 +46,10 @@ export function RemoveInboxButton({ inbox }: { inbox: Inbox }) {
     }
   }
 
-  async function handleRemove() {
+  async function handleRemove(force = false) {
     setLoading(true)
     try {
-      const url = inbox.isPaidSeat
+      const url = force
         ? `/api/inbox?inboxId=${inbox.id}&force=true`
         : `/api/inbox?inboxId=${inbox.id}`
       const res = await fetch(url, { method: "DELETE" })
@@ -61,13 +64,92 @@ export function RemoveInboxButton({ inbox }: { inbox: Inbox }) {
     }
   }
 
-  // Scheduled for removal — just show status
+  async function handleReactivate() {
+    setLoading(true)
+    try {
+      const res = await fetch("/api/billing/reactivate-inbox", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inboxId: inbox.id }),
+      })
+      if (!res.ok) throw new Error()
+      toast.success(`${inbox.email} reactivated`)
+      router.refresh()
+    } catch {
+      toast.error("Failed to reactivate inbox")
+    } finally {
+      setLoading(false)
+      setMode("idle")
+    }
+  }
+
+  // ── Scheduled for removal ─────────────────────────────────────────────────
   if (inbox.scheduledRemovalAt) {
+    if (mode === "confirm-remove-now") {
+      return (
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-[#4D4D4D]">Remove immediately?</span>
+          <button
+            onClick={() => handleRemove(false)}
+            disabled={loading}
+            className="text-xs bg-[#F43F5E] hover:bg-[#d93652] text-white px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50"
+          >
+            {loading ? "Removing…" : "Yes, remove"}
+          </button>
+          <button onClick={() => setMode("idle")} className="text-[#4D4D4D]">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )
+    }
+
+    if (mode === "confirm-reactivate") {
+      return (
+        <div className="flex flex-col items-end gap-2">
+          <p className="text-xs text-[#4D4D4D] text-right max-w-[200px]">
+            Adds $3.49/mo back, billed immediately.
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleReactivate}
+              disabled={loading}
+              className="text-xs bg-[#A78BFA] hover:bg-[#8B5CF6] text-white px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50"
+            >
+              {loading ? "Reactivating…" : "Confirm"}
+            </button>
+            <button onClick={() => setMode("idle")} className="text-[#4D4D4D]">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )
+    }
+
     return (
-      <span className="text-xs text-amber-600">Removing at period end</span>
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-amber-600">Removing at period end</span>
+        <button
+          onClick={() => setMode("confirm-remove-now")}
+          className="text-xs text-[#4D4D4D] hover:text-[#F43F5E] transition-colors"
+        >
+          Remove now
+        </button>
+        {inbox.isSubscribed && (
+          <>
+            <span className="text-[#E5E7EB]">·</span>
+            <button
+              onClick={() => setMode("confirm-reactivate")}
+              className="text-xs text-[#4D4D4D] hover:text-[#A78BFA] transition-colors"
+            >
+              Reactivate
+            </button>
+          </>
+        )}
+      </div>
     )
   }
 
+  // ── Active paid seat ──────────────────────────────────────────────────────
   if (mode === "confirm-deactivate") {
     return (
       <div className="flex items-center gap-2">
@@ -79,7 +161,7 @@ export function RemoveInboxButton({ inbox }: { inbox: Inbox }) {
         >
           {loading ? "Removing…" : "Confirm"}
         </button>
-        <button onClick={() => setMode("idle")} className="text-[#4D4D4D] hover:text-[#4D4D4D]">
+        <button onClick={() => setMode("idle")} className="text-[#4D4D4D]">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -96,13 +178,13 @@ export function RemoveInboxButton({ inbox }: { inbox: Inbox }) {
         </p>
         <div className="flex items-center gap-2">
           <button
-            onClick={handleRemove}
+            onClick={() => handleRemove(inbox.isPaidSeat)}
             disabled={loading}
             className="text-xs bg-[#F43F5E] hover:bg-[#d93652] text-white px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50"
           >
             {loading ? "Removing…" : "Yes, remove"}
           </button>
-          <button onClick={() => setMode("idle")} className="text-[#4D4D4D] hover:text-[#4D4D4D]">
+          <button onClick={() => setMode("idle")} className="text-[#4D4D4D]">
             <X className="w-4 h-4" />
           </button>
         </div>

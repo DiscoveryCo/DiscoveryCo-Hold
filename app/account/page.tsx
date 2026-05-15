@@ -121,6 +121,7 @@ export default async function AccountPage() {
                   <RemoveInboxButton inbox={{
                     ...inbox,
                     isPaidSeat: subStatus === "active" && !inbox.scheduledRemovalAt,
+                    isSubscribed: subStatus === "active",
                     scheduledRemovalAt: inbox.scheduledRemovalAt?.toISOString() ?? null,
                   }} />
                 )}
