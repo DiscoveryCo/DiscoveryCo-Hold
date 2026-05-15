@@ -83,19 +83,18 @@ export default async function BillingPage({
         const pm = sub.default_payment_method as import("stripe").Stripe.PaymentMethod | null
         const card = pm?.type === "card" ? pm.card : null
 
-        // Use the upcoming invoice for the exact amount — handles all pricing models
-        // (flat, graduated, volume) and applies discounts automatically
-        let totalAmount = 0
-        try {
-          const upcoming = await stripe.invoices.createPreview({
-            customer: user.stripeCustomerId,
-          })
-          console.log("[billing] createPreview total:", upcoming.total, "subtotal:", upcoming.subtotal, "amount_due:", upcoming.amount_due)
-          totalAmount = upcoming.total
-        } catch (err) {
-          console.error("[billing] createPreview failed:", err)
-          console.log("[billing] price.unit_amount:", price.unit_amount, "quantity:", quantity, "price.id:", price.id, "price.billing_scheme:", price.billing_scheme)
-          totalAmount = (price.unit_amount ?? 0) * quantity
+        // Retrieve the price directly — tiers are included in the response by default
+        const fullPrice = await stripe.prices.retrieve(price.id)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const tiers = (fullPrice as any).tiers as { up_to: number | null; unit_amount: number | null; flat_amount: number | null }[] | undefined
+
+        let totalAmount: number
+        if (fullPrice.unit_amount !== null && fullPrice.unit_amount !== undefined) {
+          totalAmount = fullPrice.unit_amount * quantity
+        } else if (tiers && tiers.length > 0) {
+          totalAmount = calculateGraduatedTotal(tiers, quantity)
+        } else {
+          totalAmount = 0
         }
 
         subDetails = {
