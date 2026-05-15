@@ -24,7 +24,6 @@ interface SubDetails {
   planName: string
   interval: "month" | "year"
   amount: number
-  quantity: number
   periodEnd: string
   cancelAtPeriodEnd: boolean
   cardBrand: string | null
@@ -139,7 +138,7 @@ export function BillingClient({
 
   // ── Active subscription view ──────────────────────────────────────────────
   if (hasActiveSubscription) {
-    const price = subDetails ? ((subDetails.amount * subDetails.quantity) / 100).toFixed(2) : null
+    const price = subDetails ? (subDetails.amount / 100).toFixed(2) : null
     const intervalLabel = subDetails?.interval === "year" ? "year" : "month"
 
     return (

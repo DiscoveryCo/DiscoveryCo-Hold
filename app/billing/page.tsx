@@ -1,3 +1,20 @@
+function calculateGraduatedTotal(
+  tiers: { up_to: number | null; unit_amount: number | null; flat_amount: number | null }[],
+  quantity: number
+): number {
+  let total = 0
+  let prev = 0
+  for (const tier of tiers) {
+    const tierEnd = tier.up_to ?? Infinity
+    const unitsInTier = Math.min(quantity, tierEnd) - prev
+    if (unitsInTier <= 0) break
+    total += (tier.unit_amount ?? 0) * unitsInTier + (tier.flat_amount ?? 0)
+    prev = tierEnd
+    if (prev >= quantity) break
+  }
+  return total
+}
+
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Mail, ArrowLeft } from "lucide-react"
@@ -41,7 +58,6 @@ export default async function BillingPage({
     planName: string
     interval: "month" | "year"
     amount: number
-    quantity: number
     periodEnd: string
     cancelAtPeriodEnd: boolean
     cardBrand: string | null
@@ -53,12 +69,13 @@ export default async function BillingPage({
       const subscriptions = await stripe.subscriptions.list({
         customer: user.stripeCustomerId,
         limit: 1,
-        expand: ["data.items.data.price", "data.default_payment_method"],
+        expand: ["data.items.data.price.tiers", "data.default_payment_method", "data.discounts.coupon"],
       })
       const sub = subscriptions.data[0]
       if (sub) {
         const item = sub.items.data[0]
         const price = item.price
+        const quantity = item.quantity ?? 1
         const periodEnd = item.current_period_end
           ? format(new Date(item.current_period_end * 1000), "MMMM d, yyyy")
           : null
@@ -66,11 +83,31 @@ export default async function BillingPage({
         const pm = sub.default_payment_method as import("stripe").Stripe.PaymentMethod | null
         const card = pm?.type === "card" ? pm.card : null
 
+        // For flat prices: unit_amount * quantity
+        // For tiered/graduated prices: unit_amount is null, calculate from tiers
+        let totalAmount: number
+        if (price.unit_amount !== null && price.unit_amount !== undefined) {
+          totalAmount = price.unit_amount * quantity
+        } else {
+          const tiers = (price as unknown as { tiers?: { up_to: number | null; unit_amount: number | null; flat_amount: number | null }[] }).tiers ?? []
+          totalAmount = calculateGraduatedTotal(tiers, quantity)
+        }
+
+        // Apply coupon discount if present (use first active discount)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const coupon = (sub.discounts as any)?.[0]?.coupon
+        if (coupon && typeof coupon === "object") {
+          if (coupon.percent_off) {
+            totalAmount = Math.round(totalAmount * (1 - coupon.percent_off / 100))
+          } else if (coupon.amount_off) {
+            totalAmount = Math.max(0, totalAmount - coupon.amount_off)
+          }
+        }
+
         subDetails = {
           planName: "DiscoveryMail",
           interval: price.recurring?.interval as "month" | "year" ?? "month",
-          amount: price.unit_amount ?? 0,
-          quantity: item.quantity ?? 1,
+          amount: totalAmount,
           periodEnd: periodEnd ?? "",
           cancelAtPeriodEnd: sub.cancel_at_period_end,
           cardBrand: card?.brand ?? null,
