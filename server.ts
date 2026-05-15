@@ -2,7 +2,7 @@ import { createServer } from "http"
 import { parse } from "url"
 import next from "next"
 import cron from "node-cron"
-import { checkAndDeliverAll, enforceTrialExpiry, renewAllWatches } from "./lib/scheduler"
+import { checkAndDeliverAll, enforceTrialExpiry, renewAllWatches, enforceInboxTrialExpiry, enforceScheduledRemovals } from "./lib/scheduler"
 
 const dev = process.env.NODE_ENV !== "production"
 const app = next({ dev })
@@ -17,6 +17,8 @@ app.prepare().then(() => {
   // Release held emails and deactivate inboxes for expired trials — runs hourly
   cron.schedule("0 * * * *", () => {
     enforceTrialExpiry().catch(console.error)
+    enforceInboxTrialExpiry().catch(console.error)
+    enforceScheduledRemovals().catch(console.error)
   })
 
   // Renew Gmail watch subscriptions daily at 3am — watches expire every 7 days

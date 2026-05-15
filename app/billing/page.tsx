@@ -18,6 +18,9 @@ export default async function BillingPage({
 
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
+    include: {
+      inboxes: { orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }] },
+    },
   })
   if (!user) redirect("/login")
 
@@ -117,7 +120,7 @@ export default async function BillingPage({
           </div>
         )}
         {isPastDue && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mb-6">
+          <div className="bg-[#fff1f3] border border-[#fda4af] text-[#be1d37] text-sm rounded-xl px-4 py-3 mb-6">
             Your last payment failed. Please update your payment details to keep your
             subscription active.
           </div>
@@ -134,6 +137,15 @@ export default async function BillingPage({
           monthlyPriceId={process.env.STRIPE_PRICE_MONTHLY!}
           annualPriceId={process.env.STRIPE_PRICE_ANNUAL!}
           subDetails={subDetails}
+          inboxes={user.inboxes.map((i) => ({
+            id: i.id,
+            email: i.email,
+            name: i.name,
+            image: i.image,
+            isPrimary: i.isPrimary,
+            trialEndsAt: i.trialEndsAt?.toISOString() ?? null,
+            scheduledRemovalAt: i.scheduledRemovalAt?.toISOString() ?? null,
+          }))}
         />
       </main>
 

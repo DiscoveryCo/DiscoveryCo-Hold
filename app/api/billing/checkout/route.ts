@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const { priceId } = await req.json()
+  const { priceId, quantity } = await req.json()
   if (!priceId) {
     return NextResponse.json({ error: "Missing priceId" }, { status: 400 })
   }
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
   const checkoutSession = await stripe.checkout.sessions.create({
     customer: customerId,
     mode: "subscription",
-    line_items: [{ price: priceId, quantity: 1 }],
+    line_items: [{ price: priceId, quantity: quantity ?? 1 }],
     success_url: `${baseUrl}/billing?success=1`,
     cancel_url: `${baseUrl}/billing?canceled=1`,
     allow_promotion_codes: true,

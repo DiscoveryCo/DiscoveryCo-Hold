@@ -69,6 +69,7 @@ export async function GET(req: NextRequest) {
         refreshToken: tokens.refresh_token,
         tokenExpiry: tokens.expiry_date ? new Date(tokens.expiry_date) : null,
         isPrimary: false,
+        trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
         settings: { create: {} },
       },
     })

@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Check, Star, CreditCard, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { format, differenceInDays } from "date-fns"
 
 const FEATURES_MONTHLY = [
   "Hold your inbox",
@@ -29,12 +30,23 @@ interface SubDetails {
   cardLast4: string | null
 }
 
+interface InboxItem {
+  id: string
+  email: string
+  name: string | null
+  image: string | null
+  isPrimary: boolean
+  trialEndsAt: string | null
+  scheduledRemovalAt: string | null
+}
+
 interface Props {
   hasActiveSubscription: boolean
   stripeCustomerId: string | null
   monthlyPriceId: string
   annualPriceId: string
   subDetails: SubDetails | null
+  inboxes: InboxItem[]
 }
 
 export function BillingClient({
@@ -43,9 +55,10 @@ export function BillingClient({
   monthlyPriceId,
   annualPriceId,
   subDetails,
+  inboxes,
 }: Props) {
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly")
-  const [loading, setLoading] = useState<null | "checkout" | "updateCard" | "invoices" | "cancel" | "resume">(null)
+  const [loading, setLoading] = useState<null | "checkout" | "updateCard" | "invoices" | "cancel" | "resume" | string>(null)
   const [confirming, setConfirming] = useState(false)
   const router = useRouter()
 
@@ -56,7 +69,7 @@ export function BillingClient({
       const res = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId }),
+        body: JSON.stringify({ priceId, quantity: inboxes.length }),
       })
       const data = await res.json()
       if (!res.ok || !data.url) throw new Error(data.error ?? "Failed")
@@ -64,6 +77,42 @@ export function BillingClient({
       window.location.href = data.url
     } catch {
       toast.error("Could not start checkout. Please try again.")
+      setLoading(null)
+    }
+  }
+
+  async function handleAddInbox(inboxId: string) {
+    setLoading(`add-${inboxId}`)
+    try {
+      const res = await fetch("/api/billing/add-inbox", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inboxId }),
+      })
+      if (!res.ok) throw new Error()
+      toast.success("Inbox added to subscription")
+      router.refresh()
+    } catch {
+      toast.error("Failed to add inbox")
+    } finally {
+      setLoading(null)
+    }
+  }
+
+  async function handleRemoveInbox(inboxId: string) {
+    setLoading(`remove-${inboxId}`)
+    try {
+      const res = await fetch("/api/billing/remove-inbox", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inboxId }),
+      })
+      if (!res.ok) throw new Error()
+      toast.success("Inbox will be removed at end of billing period")
+      router.refresh()
+    } catch {
+      toast.error("Failed to remove inbox")
+    } finally {
       setLoading(null)
     }
   }
@@ -177,7 +226,7 @@ export function BillingClient({
                 <button
                   onClick={handleCancel}
                   disabled={loading === "cancel"}
-                  className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                  className="text-xs bg-[#F43F5E] hover:bg-[#d93652] text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
                 >
                   {loading === "cancel" ? "Canceling…" : "Yes, cancel"}
                 </button>
@@ -191,7 +240,7 @@ export function BillingClient({
             ) : (
               <button
                 onClick={() => setConfirming(true)}
-                className="text-sm text-[#4D4D4D] hover:text-red-500 transition-colors"
+                className="text-sm text-[#4D4D4D] hover:text-[#F43F5E] transition-colors"
               >
                 Cancel
               </button>
@@ -222,6 +271,61 @@ export function BillingClient({
           </div>
         </div>
 
+        {/* Inboxes */}
+        {inboxes.length > 1 && (
+          <div className="bg-white border border-[#E5E7EB] rounded-xl p-6">
+            <h2 className="font-semibold text-[#161616] mb-4">Inboxes</h2>
+            <div className="space-y-3">
+              {inboxes.map((inbox) => {
+                const now = new Date()
+                const trial = inbox.trialEndsAt ? new Date(inbox.trialEndsAt) : null
+                const removal = inbox.scheduledRemovalAt ? new Date(inbox.scheduledRemovalAt) : null
+                const daysLeft = trial ? Math.max(0, differenceInDays(trial, now)) : null
+                const isOnTrial = trial && trial > now
+                const isScheduled = !!removal
+
+                return (
+                  <div key={inbox.id} className="flex items-center justify-between gap-4 py-2 border-b border-gray-100 last:border-0">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-[#161616] truncate">{inbox.name ?? inbox.email}</p>
+                      <p className="text-xs text-[#4D4D4D] truncate">{inbox.email}</p>
+                    </div>
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      {inbox.isPrimary ? (
+                        <span className="text-xs text-[#4D4D4D]">Primary · Included</span>
+                      ) : isScheduled ? (
+                        <span className="text-xs text-amber-600">Removes {format(removal!, "MMM d")}</span>
+                      ) : isOnTrial ? (
+                        <>
+                          <span className="text-xs text-[#4D4D4D]">Trial · {daysLeft}d left</span>
+                          <button
+                            onClick={() => handleAddInbox(inbox.id)}
+                            disabled={loading !== null}
+                            className="text-xs bg-[#ededff] hover:bg-[#dcdcff] text-[#A78BFA] font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                          >
+                            {loading === `add-${inbox.id}` ? "Adding…" : "Add — $3.49/mo"}
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-xs text-green-600">Active</span>
+                          <button
+                            onClick={() => handleRemoveInbox(inbox.id)}
+                            disabled={loading !== null}
+                            className="text-xs text-[#4D4D4D] hover:text-[#F43F5E] transition-colors disabled:opacity-50"
+                          >
+                            {loading === `remove-${inbox.id}` ? "Removing…" : "Remove"}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Invoice history */}
         <div className="bg-white border border-[#E5E7EB] rounded-xl p-6">
           <h2 className="font-semibold text-[#161616] mb-4">Invoice History</h2>
@@ -241,7 +345,11 @@ export function BillingClient({
   }
 
   // ── No subscription — show pricing ───────────────────────────────────────
-  const displayPrice = billing === "monthly" ? "4.99" : "3.99"
+  const inboxCount = inboxes.length
+  const additionalInboxes = Math.max(0, inboxCount - 1)
+  const monthlyTotal = (4.99 + additionalInboxes * 3.49).toFixed(2)
+  const annualTotal = (47.99 + additionalInboxes * 33.59).toFixed(2)
+  const displayPrice = billing === "monthly" ? monthlyTotal : (parseFloat(annualTotal) / 12).toFixed(2)
   const allFeatures = billing === "annual"
     ? [...FEATURES_MONTHLY, ...FEATURES_ANNUAL_EXTRA]
     : FEATURES_MONTHLY
@@ -261,7 +369,14 @@ export function BillingClient({
             <span className="text-sm text-[#A78BFA] mt-auto mb-1">per month</span>
           </div>
           {billing === "annual" && (
-            <p className="text-xs text-[#4D4D4D] mt-1">billed as $47.99/year</p>
+            <p className="text-xs text-[#4D4D4D] mt-1">billed as ${annualTotal}/year</p>
+          )}
+          {inboxCount > 1 && (
+            <p className="text-xs text-[#4D4D4D] mt-1">
+              {billing === "monthly"
+                ? `$4.99 base + $3.49 × ${additionalInboxes} additional inbox${additionalInboxes > 1 ? "es" : ""}`
+                : `$47.99 base + $33.59 × ${additionalInboxes} additional inbox${additionalInboxes > 1 ? "es" : ""}`}
+            </p>
           )}
         </div>
 

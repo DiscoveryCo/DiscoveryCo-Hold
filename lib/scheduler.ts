@@ -1,9 +1,13 @@
 import { prisma } from "@/lib/db"
 import { getGmailClient, ensureHoldLabel, releaseEmails, stopWatch, registerWatch } from "@/lib/gmail"
 
-export function isAllowedToHold(user: { subscriptionStatus: string; trialEndsAt: Date | null }): boolean {
+export function isAllowedToHold(
+  user: { subscriptionStatus: string; trialEndsAt: Date | null },
+  inbox?: { trialEndsAt?: Date | null }
+): boolean {
   if (user.subscriptionStatus === "active") return true
   if (user.subscriptionStatus === "trialing" && user.trialEndsAt && user.trialEndsAt > new Date()) return true
+  if (inbox?.trialEndsAt && inbox.trialEndsAt > new Date()) return true
   return false
 }
 
@@ -184,6 +188,51 @@ export async function enforceTrialExpiry() {
         console.log(`[trialExpiry] Deactivated inbox ${inbox.email} — trial ended`)
       } catch (err) {
         console.error(`[trialExpiry] Failed to deactivate inbox ${inbox.email}:`, err)
+      }
+    })
+  )
+}
+
+export async function enforceInboxTrialExpiry() {
+  const expiredInboxes = await prisma.inbox.findMany({
+    where: {
+      isActive: true,
+      trialEndsAt: { lte: new Date() },
+      user: { subscriptionStatus: { not: "active" } },
+    },
+    include: { user: true },
+  })
+
+  await Promise.allSettled(
+    expiredInboxes.map(async (inbox) => {
+      try {
+        const gmail = await getGmailClient(inbox)
+        if (inbox.holdLabelId) await releaseEmails(gmail, inbox.holdLabelId)
+        await stopWatch(gmail)
+        await prisma.inbox.update({ where: { id: inbox.id }, data: { isActive: false } })
+        console.log(`[inboxTrialExpiry] Deactivated ${inbox.email}`)
+      } catch (err) {
+        console.error(`[inboxTrialExpiry] Failed for ${inbox.email}:`, err)
+      }
+    })
+  )
+}
+
+export async function enforceScheduledRemovals() {
+  const inboxes = await prisma.inbox.findMany({
+    where: { scheduledRemovalAt: { lte: new Date() } },
+  })
+
+  await Promise.allSettled(
+    inboxes.map(async (inbox) => {
+      try {
+        const gmail = await getGmailClient(inbox)
+        if (inbox.holdLabelId) await releaseEmails(gmail, inbox.holdLabelId)
+        await stopWatch(gmail)
+        await prisma.inbox.delete({ where: { id: inbox.id } })
+        console.log(`[scheduledRemoval] Removed ${inbox.email}`)
+      } catch (err) {
+        console.error(`[scheduledRemoval] Failed for ${inbox.email}:`, err)
       }
     })
   )

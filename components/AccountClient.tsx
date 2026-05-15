@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { signOut } from "next-auth/react"
 import { Trash2, X } from "lucide-react"
+import Link from "next/link"
 
 interface Inbox {
   id: string
@@ -13,6 +14,7 @@ interface Inbox {
   image: string | null
   isActive: boolean
   isPrimary: boolean
+  isPaidSeat: boolean
 }
 
 // ── Remove a single non-primary inbox ──────────────────────────────────────
@@ -21,6 +23,14 @@ export function RemoveInboxButton({ inbox }: { inbox: Inbox }) {
   const [confirming, setConfirming] = useState(false)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+
+  if (inbox.isPaidSeat) {
+    return (
+      <Link href="/billing" className="text-xs text-[#4D4D4D] hover:text-[#A78BFA] transition-colors">
+        Manage in billing
+      </Link>
+    )
+  }
 
   async function handleRemove() {
     setLoading(true)
@@ -44,7 +54,7 @@ export function RemoveInboxButton({ inbox }: { inbox: Inbox }) {
         <button
           onClick={handleRemove}
           disabled={loading}
-          className="text-xs bg-red-500 hover:bg-red-600 text-white px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50"
+          className="text-xs bg-[#F43F5E] hover:bg-[#d93652] text-white px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50"
         >
           {loading ? "Removing…" : "Yes, remove"}
         </button>
@@ -61,7 +71,7 @@ export function RemoveInboxButton({ inbox }: { inbox: Inbox }) {
   return (
     <button
       onClick={() => setConfirming(true)}
-      className="text-xs text-[#4D4D4D] hover:text-red-500 transition-colors"
+      className="text-xs text-[#4D4D4D] hover:text-[#F43F5E] transition-colors"
     >
       Remove
     </button>
@@ -92,7 +102,7 @@ export function DeleteAccountButton() {
     return (
       <button
         onClick={() => setConfirming(true)}
-        className="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-sm font-medium px-4 py-2.5 rounded-lg transition-colors"
+        className="flex items-center gap-2 bg-[#fff1f3] hover:bg-red-100 text-[#d93652] border border-[#fda4af] text-sm font-medium px-4 py-2.5 rounded-lg transition-colors"
       >
         <Trash2 className="w-4 h-4" />
         Permanently Delete Account
@@ -101,8 +111,8 @@ export function DeleteAccountButton() {
   }
 
   return (
-    <div className="space-y-3 p-4 bg-red-50 border border-red-200 rounded-xl">
-      <p className="text-sm text-red-700">
+    <div className="space-y-3 p-4 bg-[#fff1f3] border border-[#fda4af] rounded-xl">
+      <p className="text-sm text-[#be1d37]">
         This will release all held emails, remove all your data, and cannot be undone.
         Type <strong>DELETE</strong> to confirm.
       </p>
@@ -110,13 +120,13 @@ export function DeleteAccountButton() {
         value={input}
         onChange={(e) => setInput(e.target.value)}
         placeholder="Type DELETE to confirm"
-        className="w-full border border-red-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-300"
+        className="w-full border border-[#fda4af] rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-300"
       />
       <div className="flex gap-2">
         <button
           onClick={handleDelete}
           disabled={input !== "DELETE" || loading}
-          className="bg-red-500 hover:bg-red-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors disabled:opacity-40"
+          className="bg-[#F43F5E] hover:bg-[#d93652] text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors disabled:opacity-40"
         >
           {loading ? "Deleting…" : "Delete my account"}
         </button>

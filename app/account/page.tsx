@@ -36,7 +36,7 @@ export default async function AccountPage() {
       : subStatus === "trialing"
       ? { label: trialDaysLeft !== null ? `Trial · ${trialDaysLeft}d left` : "Trial", classes: "bg-[#ededff] text-[#A78BFA]" }
       : subStatus === "past_due"
-      ? { label: "Payment failed", classes: "bg-red-50 text-red-500" }
+      ? { label: "Payment failed", classes: "bg-[#fff1f3] text-[#F43F5E]" }
       : { label: "Expired", classes: "bg-gray-50 text-[#4D4D4D]" }
 
   return (
@@ -118,7 +118,10 @@ export default async function AccountPage() {
                   <p className="text-xs text-[#4D4D4D] mt-0.5">{inbox.email}</p>
                 </div>
                 {!inbox.isPrimary && (
-                  <RemoveInboxButton inbox={inbox} />
+                  <RemoveInboxButton inbox={{
+                    ...inbox,
+                    isPaidSeat: subStatus === "active" && !inbox.trialEndsAt && !inbox.scheduledRemovalAt,
+                  }} />
                 )}
               </div>
             ))}

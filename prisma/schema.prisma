@@ -33,9 +33,11 @@ model Inbox {
   accessToken  String?
   refreshToken String?
   tokenExpiry  DateTime?
-  isActive     Boolean   @default(false)
-  pausedUntil  DateTime?
-  holdLabelId  String?
+  isActive           Boolean   @default(false)
+  pausedUntil        DateTime?
+  trialEndsAt        DateTime?
+  scheduledRemovalAt DateTime?
+  holdLabelId        String?
   historyId    String?
   watchExpiry  DateTime?
   isPrimary    Boolean   @default(false)

@@ -68,6 +68,17 @@ async function handleSubscriptionChange(sub: Stripe.Subscription) {
       currentPeriodEnd,
     },
   })
+
+  // When subscription becomes active, clear per-inbox trials — all inboxes are now covered
+  if (mappedStatus === "active") {
+    const user = await prisma.user.findFirst({ where: { stripeCustomerId: customerId } })
+    if (user) {
+      await prisma.inbox.updateMany({
+        where: { userId: user.id, trialEndsAt: { not: null } },
+        data: { trialEndsAt: null },
+      })
+    }
+  }
 }
 
 async function handlePaymentFailed(customerId: string) {
