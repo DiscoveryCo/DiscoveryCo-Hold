@@ -90,9 +90,11 @@ export default async function BillingPage({
           const upcoming = await stripe.invoices.createPreview({
             customer: user.stripeCustomerId,
           })
+          console.log("[billing] createPreview total:", upcoming.total, "subtotal:", upcoming.subtotal, "amount_due:", upcoming.amount_due)
           totalAmount = upcoming.total
-        } catch {
-          // Fall back to unit_amount if upcoming invoice unavailable
+        } catch (err) {
+          console.error("[billing] createPreview failed:", err)
+          console.log("[billing] price.unit_amount:", price.unit_amount, "quantity:", quantity, "price.id:", price.id, "price.billing_scheme:", price.billing_scheme)
           totalAmount = (price.unit_amount ?? 0) * quantity
         }
 
