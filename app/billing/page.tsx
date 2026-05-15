@@ -83,8 +83,8 @@ export default async function BillingPage({
         const pm = sub.default_payment_method as import("stripe").Stripe.PaymentMethod | null
         const card = pm?.type === "card" ? pm.card : null
 
-        // Retrieve the price directly — tiers are included in the response by default
-        const fullPrice = await stripe.prices.retrieve(price.id)
+        // Retrieve the price with tiers explicitly expanded (not returned by default)
+        const fullPrice = await stripe.prices.retrieve(price.id, { expand: ["tiers"] })
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const tiers = (fullPrice as any).tiers as { up_to: number | null; unit_amount: number | null; flat_amount: number | null }[] | undefined
 
