@@ -41,6 +41,7 @@ export default async function BillingPage({
     planName: string
     interval: "month" | "year"
     amount: number
+    quantity: number
     periodEnd: string
     cancelAtPeriodEnd: boolean
     cardBrand: string | null
@@ -69,6 +70,7 @@ export default async function BillingPage({
           planName: "DiscoveryMail",
           interval: price.recurring?.interval as "month" | "year" ?? "month",
           amount: price.unit_amount ?? 0,
+          quantity: item.quantity ?? 1,
           periodEnd: periodEnd ?? "",
           cancelAtPeriodEnd: sub.cancel_at_period_end,
           cardBrand: card?.brand ?? null,
