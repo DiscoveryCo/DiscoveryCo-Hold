@@ -21,7 +21,6 @@ const FEATURES_ANNUAL_EXTRA = [
 ]
 
 interface SubDetails {
-  planName: string
   interval: "month" | "year"
   amount: number
   periodEnd: string

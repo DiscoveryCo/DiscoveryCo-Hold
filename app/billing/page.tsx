@@ -1,20 +1,3 @@
-function calculateGraduatedTotal(
-  tiers: { up_to: number | null; unit_amount: number | null; flat_amount: number | null }[],
-  quantity: number
-): number {
-  let total = 0
-  let prev = 0
-  for (const tier of tiers) {
-    const tierEnd = tier.up_to ?? Infinity
-    const unitsInTier = Math.min(quantity, tierEnd) - prev
-    if (unitsInTier <= 0) break
-    total += (tier.unit_amount ?? 0) * unitsInTier + (tier.flat_amount ?? 0)
-    prev = tierEnd
-    if (prev >= quantity) break
-  }
-  return total
-}
-
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Mail, ArrowLeft } from "lucide-react"
@@ -24,6 +7,22 @@ import { stripe } from "@/lib/stripe"
 import { format } from "date-fns"
 import { BillingClient } from "@/components/BillingClient"
 import { UserMenu } from "@/components/UserMenu"
+
+function calculateGraduatedTotal(
+  tiers: { up_to: number | null; unit_amount: number | null; flat_amount: number | null }[],
+  quantity: number,
+): number {
+  let total = 0
+  let remaining = quantity
+  for (const tier of tiers) {
+    if (remaining <= 0) break
+    const cap = tier.up_to ?? Infinity
+    const inTier = tier.up_to === null ? remaining : Math.min(remaining, cap)
+    total += (tier.unit_amount ?? 0) * inTier + (tier.flat_amount ?? 0)
+    remaining -= inTier
+  }
+  return total
+}
 
 export default async function BillingPage({
   searchParams,
@@ -55,7 +54,6 @@ export default async function BillingPage({
 
   // Fetch live subscription details from Stripe if subscribed
   let subDetails: {
-    planName: string
     interval: "month" | "year"
     amount: number
     periodEnd: string
@@ -69,7 +67,7 @@ export default async function BillingPage({
       const subscriptions = await stripe.subscriptions.list({
         customer: user.stripeCustomerId,
         limit: 1,
-        expand: ["data.items.data.price", "data.default_payment_method", "data.discounts.coupon"],
+        expand: ["data.items.data.price", "data.default_payment_method", "data.discounts"],
       })
       const sub = subscriptions.data[0]
       if (sub) {
@@ -97,8 +95,18 @@ export default async function BillingPage({
           totalAmount = 0
         }
 
+        // Apply coupon discount if present
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const coupon = (sub.discounts as any)?.[0]?.coupon
+        if (coupon) {
+          if (coupon.percent_off) {
+            totalAmount = Math.round(totalAmount * (1 - coupon.percent_off / 100))
+          } else if (coupon.amount_off) {
+            totalAmount = Math.max(0, totalAmount - coupon.amount_off)
+          }
+        }
+
         subDetails = {
-          planName: "DiscoveryMail",
           interval: price.recurring?.interval as "month" | "year" ?? "month",
           amount: totalAmount,
           periodEnd: periodEnd ?? "",
