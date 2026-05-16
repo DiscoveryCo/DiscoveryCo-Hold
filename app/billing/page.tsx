@@ -95,9 +95,9 @@ export default async function BillingPage({
           totalAmount = 0
         }
 
-        // Apply coupon discount if present
+        // Apply coupon discount if present (check both array and deprecated singular field)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const coupon = (sub.discounts as any)?.[0]?.coupon
+        const coupon = (sub.discounts as any)?.[0]?.coupon ?? (sub as any).discount?.coupon
         if (coupon) {
           if (coupon.percent_off) {
             totalAmount = Math.round(totalAmount * (1 - coupon.percent_off / 100))
