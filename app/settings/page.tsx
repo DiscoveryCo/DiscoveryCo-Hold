@@ -68,8 +68,9 @@ async function SettingsContent({ tab, inboxId }: { tab: string; inboxId?: string
           <Link href={dashboardHref} className="text-[#4D4D4D] hover:text-[#4D4D4D]">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <Link href={dashboardHref} className="hover:opacity-75 transition-opacity">
-            <img src="/offduty-logo.svg?v=2" alt="Offduty" className="h-7" />
+          <Link href={dashboardHref} className="flex items-center gap-2 hover:opacity-75 transition-opacity">
+            <img src="/offduty-icon.svg" alt="" className="h-7 w-7" />
+            <span className="font-bold text-lg text-[#161616]" style={{ fontFamily: "Helvetica, Arial, sans-serif" }}>offduty</span>
           </Link>
         </div>
         <div className="flex justify-center">
@@ -145,7 +146,7 @@ async function SettingsContent({ tab, inboxId }: { tab: string; inboxId?: string
       <footer className="border-t border-[#E5E7EB] py-6 px-6 flex items-center justify-between mt-10">
         <div className="flex items-center gap-2">
           <img src="/offduty-icon.svg" alt="" className="w-5 h-5" />
-          <span className="text-sm font-semibold text-[#161616]">Offduty</span>
+          <span className="text-sm font-bold text-[#161616]" style={{ fontFamily: "Helvetica, Arial, sans-serif" }}>offduty</span>
         </div>
         <div className="flex gap-5 text-xs text-[#4D4D4D]">
           <span>© {new Date().getFullYear()}</span>

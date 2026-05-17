@@ -46,8 +46,9 @@ export default async function AccountPage() {
         <Link href="/dashboard" className="text-[#4D4D4D] hover:text-[#4D4D4D]">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <Link href="/dashboard" className="hover:opacity-75 transition-opacity">
-          <img src="/offduty-logo.svg?v=2" alt="Offduty" className="h-7" />
+        <Link href="/dashboard" className="flex items-center gap-2 hover:opacity-75 transition-opacity">
+          <img src="/offduty-icon.svg" alt="" className="h-7 w-7" />
+          <span className="font-bold text-lg text-[#161616]" style={{ fontFamily: "Helvetica, Arial, sans-serif" }}>offduty</span>
         </Link>
         <div className="ml-auto">
           <UserMenu email={user.email} image={user.image ?? null} settingsHref="/settings" />
@@ -151,7 +152,7 @@ export default async function AccountPage() {
       <footer className="border-t border-[#E5E7EB] py-6 px-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <img src="/offduty-icon.svg" alt="" className="w-5 h-5" />
-          <span className="text-sm font-semibold text-[#161616]">Offduty</span>
+          <span className="text-sm font-bold text-[#161616]" style={{ fontFamily: "Helvetica, Arial, sans-serif" }}>offduty</span>
         </div>
         <span className="text-xs text-[#4D4D4D]">© {new Date().getFullYear()}</span>
       </footer>

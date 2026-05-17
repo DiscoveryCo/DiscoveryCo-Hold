@@ -104,7 +104,8 @@ async function DashboardContent({ page, inboxId }: { page: number; inboxId?: str
       {/* Header */}
       <header className="bg-white border-b border-[#E5E7EB] px-6 py-3 grid grid-cols-3 items-center">
         <div className="flex items-center gap-2">
-          <img src="/offduty-logo.svg?v=2" alt="Offduty" className="h-7" />
+          <img src="/offduty-icon.svg" alt="" className="h-7 w-7" />
+          <span className="font-bold text-lg text-[#161616]" style={{ fontFamily: "Helvetica, Arial, sans-serif" }}>offduty</span>
         </div>
         <div className="flex justify-center">
           <InboxSwitcher inboxes={user.inboxes} currentInboxId={fullInbox.id} />
@@ -247,7 +248,7 @@ async function DashboardContent({ page, inboxId }: { page: number; inboxId?: str
       <footer className="border-t border-[#E5E7EB] py-6 px-6 flex items-center justify-between mt-4">
         <div className="flex items-center gap-2">
           <img src="/offduty-icon.svg" alt="" className="w-5 h-5" />
-          <span className="text-sm font-semibold text-[#161616]">Offduty</span>
+          <span className="text-sm font-bold text-[#161616]" style={{ fontFamily: "Helvetica, Arial, sans-serif" }}>offduty</span>
         </div>
         <span className="text-xs text-[#4D4D4D]">© {new Date().getFullYear()}</span>
       </footer>
