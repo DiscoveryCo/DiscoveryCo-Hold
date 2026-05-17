@@ -47,7 +47,7 @@ export default async function AccountPage() {
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <Link href="/dashboard" className="hover:opacity-75 transition-opacity">
-          <img src="/offduty-logo.svg" alt="Offduty" className="h-7" />
+          <img src="/offduty-logo.svg?v=2" alt="Offduty" className="h-7" />
         </Link>
         <div className="ml-auto">
           <UserMenu email={user.email} image={user.image ?? null} settingsHref="/settings" />

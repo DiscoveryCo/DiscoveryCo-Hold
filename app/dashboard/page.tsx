@@ -104,7 +104,7 @@ async function DashboardContent({ page, inboxId }: { page: number; inboxId?: str
       {/* Header */}
       <header className="bg-white border-b border-[#E5E7EB] px-6 py-3 grid grid-cols-3 items-center">
         <div className="flex items-center gap-2">
-          <img src="/offduty-logo.svg" alt="Offduty" className="h-7" />
+          <img src="/offduty-logo.svg?v=2" alt="Offduty" className="h-7" />
         </div>
         <div className="flex justify-center">
           <InboxSwitcher inboxes={user.inboxes} currentInboxId={fullInbox.id} />

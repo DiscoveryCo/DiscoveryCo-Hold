@@ -69,7 +69,7 @@ async function SettingsContent({ tab, inboxId }: { tab: string; inboxId?: string
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <Link href={dashboardHref} className="hover:opacity-75 transition-opacity">
-            <img src="/offduty-logo.svg" alt="Offduty" className="h-7" />
+            <img src="/offduty-logo.svg?v=2" alt="Offduty" className="h-7" />
           </Link>
         </div>
         <div className="flex justify-center">
