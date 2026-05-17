@@ -15,7 +15,7 @@ export async function getOrCreateCustomer(
   const customer = await stripe.customers.create({
     email,
     name: name ?? undefined,
-    metadata: { discoverymail: "true" },
+    metadata: { offduty: "true" },
   })
   return customer.id
 }

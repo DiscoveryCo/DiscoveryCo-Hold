@@ -30,6 +30,6 @@ app.prepare().then(() => {
     const parsedUrl = parse(req.url!, true)
     handle(req, res, parsedUrl)
   }).listen(port, () => {
-    console.log(`> DiscoveryMail ready on http://localhost:${port}`)
+    console.log(`> Offduty ready on http://localhost:${port}`)
   })
 })

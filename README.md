@@ -1,12 +1,12 @@
-# DiscoveryMail
+# Offduty
 
 Self-hosted Gmail batching app. Holds incoming emails and releases them in scheduled batches — you decide when email reaches you, not the sender.
 
 ## How it works
 
-1. Sign in with Google. DiscoveryMail requests `gmail.modify` access.
-2. Click **Start DiscoveryMail** — it creates a `DiscoveryMail-Hold` label in Gmail and registers a push notification via Google Cloud Pub/Sub.
-3. As emails arrive, Gmail pushes a notification to the webhook. DiscoveryMail checks VIP rules — non-VIP emails are silently moved to the hold label.
+1. Sign in with Google. Offduty requests `gmail.modify` access.
+2. Click **Start Offduty** — it creates a `Offduty-Hold` label in Gmail and registers a push notification via Google Cloud Pub/Sub.
+3. As emails arrive, Gmail pushes a notification to the webhook. Offduty checks VIP rules — non-VIP emails are silently moved to the hold label.
 4. At your scheduled delivery times, the cron scheduler moves all held emails back to your inbox at once.
 5. **Deliver Now** releases everything immediately. **Stop** releases everything and deactivates the hold.
 
@@ -29,11 +29,11 @@ Enable the **Gmail API** and **Pub/Sub API** in a Google Cloud project.
 3. Copy Client ID and Client Secret
 
 **Pub/Sub:**
-1. Create a topic, e.g. `discoverymail`
+1. Create a topic, e.g. `offduty`
 2. Create a **push subscription** pointing to: `https://yourdomain.com/api/gmail/webhook`
 3. Grant the Gmail push service account publisher access:
    ```bash
-   gcloud pubsub topics add-iam-policy-binding discoverymail \
+   gcloud pubsub topics add-iam-policy-binding offduty \
      --member="serviceAccount:gmail-api-push@system.gserviceaccount.com" \
      --role="roles/pubsub.publisher"
    ```
@@ -49,7 +49,7 @@ NEXTAUTH_URL=http://localhost:3000
 AUTH_SECRET=                        # openssl rand -base64 32
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
-GOOGLE_PUBSUB_TOPIC=projects/{project}/topics/discoverymail
+GOOGLE_PUBSUB_TOPIC=projects/{project}/topics/offduty
 ```
 
 `DATABASE_URL` in `.env` is already set to SQLite (`file:./prisma/dev.db`).
