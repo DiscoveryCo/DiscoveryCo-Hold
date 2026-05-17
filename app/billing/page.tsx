@@ -186,7 +186,7 @@ export default async function BillingPage({
           <img src="/offduty-icon.svg" alt="" className="w-5 h-5" />
           <span className="text-sm font-bold text-[#161616]" style={{ fontFamily: "Helvetica, Arial, sans-serif" }}>offduty</span>
         </div>
-        <span className="text-xs text-[#4D4D4D]">© {new Date().getFullYear()}</span>
+        <span className="text-xs text-[#4D4D4D]">© {new Date().getFullYear()} DiscoveryCo</span>
       </footer>
     </div>
   )

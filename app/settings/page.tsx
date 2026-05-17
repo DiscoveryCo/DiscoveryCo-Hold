@@ -149,7 +149,7 @@ async function SettingsContent({ tab, inboxId }: { tab: string; inboxId?: string
           <span className="text-sm font-bold text-[#161616]" style={{ fontFamily: "Helvetica, Arial, sans-serif" }}>offduty</span>
         </div>
         <div className="flex gap-5 text-xs text-[#4D4D4D]">
-          <span>© {new Date().getFullYear()}</span>
+          <span>© {new Date().getFullYear()} DiscoveryCo</span>
         </div>
       </footer>
     </div>
