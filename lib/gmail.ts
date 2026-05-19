@@ -1,6 +1,7 @@
 import { google } from "googleapis"
 import { prisma } from "@/lib/db"
 import type { Inbox, VipRule } from "@/lib/generated/prisma/client"
+import { decryptToken, encryptToken } from "@/lib/crypto"
 
 const HOLD_LABEL_NAME = "Offduty-Hold"
 const LEGACY_HOLD_LABEL_NAME = "DiscoveryMail-Hold"
@@ -8,12 +9,14 @@ const LEGACY_HOLD_LABEL_NAME = "DiscoveryMail-Hold"
 const oauthClientCache = new Map<string, InstanceType<typeof google.auth.OAuth2>>()
 
 function getOAuth2Client(inbox: Inbox) {
+  const accessToken = inbox.accessToken ? decryptToken(inbox.accessToken) : null
+  const refreshToken = inbox.refreshToken ? decryptToken(inbox.refreshToken) : null
+
   const cached = oauthClientCache.get(inbox.id)
   if (cached) {
-    // Update credentials in case tokens were refreshed since last use
     cached.setCredentials({
-      access_token: inbox.accessToken,
-      refresh_token: inbox.refreshToken,
+      access_token: accessToken,
+      refresh_token: refreshToken,
       expiry_date: inbox.tokenExpiry ? inbox.tokenExpiry.getTime() : undefined,
     })
     return cached
@@ -25,15 +28,15 @@ function getOAuth2Client(inbox: Inbox) {
     `${process.env.NEXTAUTH_URL}/api/auth/callback/google`
   )
   oauth2.setCredentials({
-    access_token: inbox.accessToken,
-    refresh_token: inbox.refreshToken,
+    access_token: accessToken,
+    refresh_token: refreshToken,
     expiry_date: inbox.tokenExpiry ? inbox.tokenExpiry.getTime() : undefined,
   })
   oauth2.on("tokens", async (tokens) => {
     await prisma.inbox.update({
       where: { id: inbox.id },
       data: {
-        accessToken: tokens.access_token ?? inbox.accessToken,
+        accessToken: tokens.access_token ? encryptToken(tokens.access_token) : inbox.accessToken,
         tokenExpiry: tokens.expiry_date ? new Date(tokens.expiry_date) : inbox.tokenExpiry,
       },
     })

@@ -5,6 +5,7 @@ import { google } from "googleapis"
 import { cookies } from "next/headers"
 import { getGmailClient, ensureHoldLabel } from "@/lib/gmail"
 import { stripe } from "@/lib/stripe"
+import { encryptToken } from "@/lib/crypto"
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -62,8 +63,8 @@ export async function GET(req: NextRequest) {
         name: profile.name,
         image: profile.picture,
         googleId: profile.id,
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token ?? undefined,
+        accessToken: tokens.access_token ? encryptToken(tokens.access_token) : undefined,
+        refreshToken: tokens.refresh_token ? encryptToken(tokens.refresh_token) : undefined,
         tokenExpiry: tokens.expiry_date ? new Date(tokens.expiry_date) : null,
       },
       create: {
@@ -72,8 +73,8 @@ export async function GET(req: NextRequest) {
         name: profile.name,
         image: profile.picture,
         googleId: profile.id,
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token,
+        accessToken: tokens.access_token ? encryptToken(tokens.access_token) : undefined,
+        refreshToken: tokens.refresh_token ? encryptToken(tokens.refresh_token) : undefined,
         tokenExpiry: tokens.expiry_date ? new Date(tokens.expiry_date) : null,
         isPrimary: false,
         settings: { create: {} },

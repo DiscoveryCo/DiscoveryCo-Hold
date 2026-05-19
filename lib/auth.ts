@@ -1,6 +1,7 @@
 import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
 import { prisma } from "@/lib/db"
+import { encryptToken } from "@/lib/crypto"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -48,8 +49,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             name: user.name,
             image: user.image,
             googleId: account?.providerAccountId,
-            accessToken: account?.access_token,
-            refreshToken: account?.refresh_token,
+            accessToken: account?.access_token ? encryptToken(account.access_token) : undefined,
+            refreshToken: account?.refresh_token ? encryptToken(account.refresh_token) : undefined,
             tokenExpiry: account?.expires_at
               ? new Date(account.expires_at * 1000)
               : null,
@@ -60,8 +61,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             name: user.name,
             image: user.image,
             googleId: account?.providerAccountId,
-            accessToken: account?.access_token,
-            refreshToken: account?.refresh_token,
+            accessToken: account?.access_token ? encryptToken(account.access_token) : undefined,
+            refreshToken: account?.refresh_token ? encryptToken(account.refresh_token) : undefined,
             tokenExpiry: account?.expires_at
               ? new Date(account.expires_at * 1000)
               : null,
