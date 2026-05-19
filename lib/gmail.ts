@@ -186,6 +186,16 @@ export async function stopWatch(gmail: ReturnType<typeof google.gmail>) {
   await gmail.users.stop({ userId: "me" }).catch(() => {})
 }
 
+export async function revokeAccess(inbox: Inbox) {
+  try {
+    const oauth2 = getOAuth2Client(inbox)
+    const token = inbox.refreshToken ?? inbox.accessToken
+    if (token) await oauth2.revokeToken(token)
+  } catch {
+    // non-fatal — token may already be expired or revoked by the user
+  }
+}
+
 export async function getHeldCount(
   gmail: ReturnType<typeof google.gmail>,
   holdLabelId: string

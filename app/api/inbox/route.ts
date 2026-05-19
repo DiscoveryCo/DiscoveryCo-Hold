@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
-import { getGmailClient, releaseEmails, stopWatch } from "@/lib/gmail"
+import { getGmailClient, releaseEmails, stopWatch, revokeAccess } from "@/lib/gmail"
 import { stripe } from "@/lib/stripe"
 
 export async function DELETE(req: NextRequest) {
@@ -55,6 +55,7 @@ export async function DELETE(req: NextRequest) {
     const gmail = await getGmailClient(inbox)
     if (inbox.holdLabelId) await releaseEmails(gmail, inbox.holdLabelId)
     await stopWatch(gmail)
+    await revokeAccess(inbox)
   } catch {
     // non-fatal — continue with deletion
   }
