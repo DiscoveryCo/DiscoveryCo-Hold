@@ -192,7 +192,8 @@ export async function stopWatch(gmail: ReturnType<typeof google.gmail>) {
 export async function revokeAccess(inbox: Inbox) {
   try {
     const oauth2 = getOAuth2Client(inbox)
-    const token = inbox.refreshToken ?? inbox.accessToken
+    const raw = inbox.refreshToken ?? inbox.accessToken
+    const token = raw ? decryptToken(raw) : null
     if (token) await oauth2.revokeToken(token)
   } catch {
     // non-fatal — token may already be expired or revoked by the user
