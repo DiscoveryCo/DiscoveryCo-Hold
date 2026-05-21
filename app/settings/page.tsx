@@ -70,7 +70,7 @@ async function SettingsContent({ tab, inboxId }: { tab: string; inboxId?: string
           </Link>
           <Link href={dashboardHref} className="flex items-center gap-2 hover:opacity-75 transition-opacity">
             <img src="/offduty-icon.svg" alt="" className="h-7 w-7" />
-            <span className="font-bold text-lg text-[#161616]" style={{ fontFamily: "Helvetica, Arial, sans-serif" }}>offduty</span>
+            <span className="hidden sm:inline font-bold text-lg text-[#161616]" style={{ fontFamily: "Helvetica, Arial, sans-serif" }}>offduty</span>
           </Link>
         </div>
         <div className="flex justify-center">

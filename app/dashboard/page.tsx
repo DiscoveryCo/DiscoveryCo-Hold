@@ -105,7 +105,7 @@ async function DashboardContent({ page, inboxId }: { page: number; inboxId?: str
       <header className="bg-white border-b border-[#E5E7EB] px-6 py-3 grid grid-cols-3 items-center">
         <div className="flex items-center gap-2">
           <img src="/offduty-icon.svg" alt="" className="h-7 w-7" />
-          <span className="font-bold text-lg text-[#161616]" style={{ fontFamily: "Helvetica, Arial, sans-serif" }}>offduty</span>
+          <span className="hidden sm:inline font-bold text-lg text-[#161616]" style={{ fontFamily: "Helvetica, Arial, sans-serif" }}>offduty</span>
         </div>
         <div className="flex justify-center">
           <InboxSwitcher inboxes={user.inboxes} currentInboxId={fullInbox.id} />
@@ -161,9 +161,9 @@ async function DashboardContent({ page, inboxId }: { page: number; inboxId?: str
               <Image src={fullInbox.image} alt="" width={52} height={52} className="rounded-xl" />
             )}
             <div>
-              <p className="font-semibold text-[#161616] text-lg">{fullInbox.name}</p>
-              <p className="text-[#4D4D4D] text-sm">{fullInbox.email}</p>
-              <p className="text-[#4D4D4D] text-xs mt-0.5">Member since {joinDate}</p>
+              <p className="font-semibold text-[#161616] text-lg border-0">{fullInbox.name}</p>
+              <p className="text-[#4D4D4D] text-sm border-0">{fullInbox.email}</p>
+              <p className="text-[#4D4D4D] text-xs mt-0.5 border-0">Member since {joinDate}</p>
             </div>
           </div>
           <DashboardActions key={fullInbox.id} isActive={fullInbox.isActive} inboxId={fullInbox.id} pausedUntil={fullInbox.pausedUntil?.toISOString() ?? null} />
